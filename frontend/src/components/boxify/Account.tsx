@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { DropdownList, ListItem } from '../DropdownList';
+import { DropdownList, ListItem } from '@/components/DropdownList';
+import { checkExistingConnection, connectWallet, disconnectWallet } from '@/lib/account';
 
 export interface AccountProps {
     onAddressChange?: (address: string) => void;
@@ -17,36 +18,102 @@ const initialTasks: ListItem[] = [
     { id: "task-8", text: "Be able to see block hash of wallet", completed: false },
 ];
 
-export default function Account({ onAddressChange }: AccountProps): JSX.Element {
-    const [address, setAddress] = useState<string>('');
-    const [tasks, setTasks] = useState<ListItem[]>(initialTasks);
 
-    // Simulate getting an address (could be from a wallet connection)
-    const connectWallet = () => {
-        const mockAddress = "0x" + Math.random().toString(16).slice(2, 14);
-        setAddress(mockAddress);
+const WorkingOn = ({ setAddress, onAddressChange }: { setAddress: (address: string) => void, onAddressChange?: (address: string) => void }) => {
+    const [connectionStatus, setConnectionStatus] = useState<string>('');
 
-        // Pass the address back to the parent
-        if (onAddressChange) {
-            onAddressChange(mockAddress);
+    const handleCheckConnection = async () => {
+        try {
+            setConnectionStatus('Checking connection...');
+            const result = await checkExistingConnection();
+
+            if (result && result.address) {
+                setConnectionStatus(`Found connection: ${result.address}`);
+                setAddress(result.address);
+                if (onAddressChange) onAddressChange(result.address);
+            } else {
+                setConnectionStatus('No existing connection found');
+            }
+        } catch (error) {
+            setConnectionStatus(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     };
 
-    const disconnectWallet = () => {
-        setAddress('');
-        if (onAddressChange) {
-            onAddressChange('');
+    const HandleConnection = () => {
+        return (
+            <div className="bg-white dark:bg-gray-900 p-4 rounded-md border mb-2">
+                <div
+                    onClick={handleCheckConnection}
+                    className='cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-2 rounded-md border mb-2'
+                >
+                    Check Existing Connection
+                </div>
+                {connectionStatus && (
+                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                        {connectionStatus}
+                    </div>
+                )}
+            </div>
+        )
+    }
+
+    return (
+        <div>
+            <HandleConnection />
+        </div>
+    );
+};
+
+export default function Account({ onAddressChange }: AccountProps): JSX.Element {
+    const [address, setAddress] = useState<string>('');
+    const [tasks, setTasks] = useState<ListItem[]>(initialTasks);
+    const [connectionError, setConnectionError] = useState<string>('');
+    const [disconnectStatus, setDisconnectStatus] = useState<string>('');
+
+    const handleConnectWallet = async () => {
+        try {
+            setConnectionError('');
+            const result = await connectWallet();
+            setAddress(result.address);
+
+            // Pass the address back to the parent
+            if (onAddressChange) {
+                onAddressChange(result.address);
+            }
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error connecting wallet';
+            setConnectionError(errorMessage);
+            console.error("Wallet connection error:", error);
+        }
+    };
+
+    const handleDisconnectWallet = async () => {
+        try {
+            setDisconnectStatus('Disconnecting...');
+            await disconnectWallet();
+            setAddress('');
+            setDisconnectStatus('Disconnected successfully');
+            
+            if (onAddressChange) {
+                onAddressChange('');
+            }
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error disconnecting wallet';
+            setDisconnectStatus(`Error: ${errorMessage}`);
+            console.error("Wallet disconnection error:", error);
         }
     };
 
     const handleTaskToggle = (id: string, completed: boolean) => {
-        setTasks(tasks.map(task => 
+        setTasks(tasks.map(task =>
             task.id === id ? { ...task, completed } : task
         ));
     };
 
     return (
         <div className="flex flex-col gap-4">
+            <WorkingOn setAddress={setAddress} onAddressChange={onAddressChange} />
+
             <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-md">
                 {address ?
                     <div className="flex flex-col mb-2">
@@ -55,15 +122,24 @@ export default function Account({ onAddressChange }: AccountProps): JSX.Element 
                     </div> :
                     <div className="text-gray-500 dark:text-gray-400 mb-2">Not connected to a wallet</div>
                 }
+
+                {connectionError && (
+                    <div className="text-red-500 text-sm mb-2">{connectionError}</div>
+                )}
+
+                {disconnectStatus && (
+                    <div className="text-sm mb-2 text-gray-600 dark:text-gray-400">{disconnectStatus}</div>
+                )}
+
                 <div className="flex gap-4">
                     <button
-                        onClick={connectWallet}
+                        onClick={handleConnectWallet}
                         className="border bg-blue-500 hover:bg-blue-600 text-white w-6/12 px-4 py-2 rounded"
                     >
                         {address ? 'Change Address' : 'Connect Wallet'}
                     </button>
                     <button
-                        onClick={disconnectWallet}
+                        onClick={handleDisconnectWallet}
                         className="border bg-gray-500 hover:bg-gray-600 text-white w-6/12 px-4 py-2 rounded"
                         disabled={!address}
                     >
@@ -71,9 +147,9 @@ export default function Account({ onAddressChange }: AccountProps): JSX.Element 
                     </button>
                 </div>
             </div>
-            
-            <DropdownList 
-                title="Wallet Integration Tasks" 
+
+            <DropdownList
+                title="Wallet Integration Tasks"
                 items={tasks}
                 onItemToggle={handleTaskToggle}
             />

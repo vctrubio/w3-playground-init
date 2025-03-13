@@ -6,7 +6,7 @@ import { routes } from './routes';
 function App() {
   return (
     <Router>
-      <div className="min-h-screen flex flex-col bg-white dark:bg-gray-900 transition-colors">
+      <div className="min-h-screen flex flex-col dark:bg-gray-900 transition-colors">
         <Navbar />
         <main className="flex-grow">
           <Routes>

@@ -55,7 +55,7 @@ export default function Home() {
   ];
 
   return (
-    <div className='dark:text-white border p-4 mx-auto'>
+    <div className='dark:text-white p-4 mx-auto'>
       <BoxContainer modules={boxModules} />
     </div>
   );
