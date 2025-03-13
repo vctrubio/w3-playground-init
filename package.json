@@ -1,0 +1,16 @@
+{
+  "name": "w3playground",
+  "version": "1.0.0",
+  "description": "Ethereum playground with React frontend and Bun backend",
+  "scripts": {
+    "frontend:dev": "cd frontend && bun run dev",
+    "frontend:build": "cd frontend && bun run build",
+    "backend:dev": "cd backend && bun run dev",
+    "contracts:test": "cd contracts && bun run test",
+    "dev": "concurrently \"bun run frontend:dev\" \"bun run backend:dev\"",
+    "install:all": "bun install && cd frontend && bun install && cd ../backend && bun install && cd ../contracts && bun install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
