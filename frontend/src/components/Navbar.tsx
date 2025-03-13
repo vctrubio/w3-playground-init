@@ -4,17 +4,42 @@ import { Link, useLocation } from 'react-router-dom';
 import { useMemo } from 'react';
 import Logo from './Logo';
 
+const NavButton = ({ 
+  onClick, 
+  color = "blue", 
+  children 
+}: { 
+  onClick: () => void, 
+  color?: "blue" | "red" | "orange", 
+  children: React.ReactNode 
+}) => {
+  const colorClasses = {
+    blue: "bg-blue-600 hover:bg-blue-700",
+    red: "bg-red-600 hover:bg-red-700",
+    orange: "bg-orange-800 hover:bg-orange-500"
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      className={`${colorClasses[color]} text-white py-2 px-4 rounded-full transition text-sm`}
+    >
+      {children}
+    </button>
+  );
+};
+
 export default function Navbar() {
   const { account, isConnected, balance, connectWallet, disconnectWallet } = useWallet();
   const location = useLocation();
-  
+
   // Generate breadcrumb segments from current path
   const breadcrumbs = useMemo(() => {
     const pathSegments = location.pathname.split('/').filter(Boolean);
-    
+
     // Start with home 
     const crumbs = [{ path: '/', label: 'Home' }];
-    
+
     // Build up the paths for each segment
     let currentPath = '';
     pathSegments.forEach(segment => {
@@ -23,7 +48,7 @@ export default function Navbar() {
       const label = segment.charAt(0).toUpperCase() + segment.slice(1);
       crumbs.push({ path: currentPath, label });
     });
-    
+
     return crumbs;
   }, [location.pathname]);
 
@@ -35,7 +60,7 @@ export default function Navbar() {
         <div className="flex items-center space-x-4">
           {/* Logo is always visible */}
           <Logo />
-          
+
           {/* Show breadcrumb path if not on home page */}
           {!isHomePage && (
             <div className="flex items-center ml-4">
@@ -54,13 +79,12 @@ export default function Navbar() {
                         </svg>
                       </span>
                     )}
-                    <Link 
+                    <Link
                       to={crumb.path}
-                      className={`${
-                        index === breadcrumbs.length - 2 
-                          ? 'text-gray-900 dark:text-white font-medium' 
-                          : 'text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
-                      }`}
+                      className={`${index === breadcrumbs.length - 2
+                        ? 'text-gray-900 dark:text-white font-medium'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                        }`}
                     >
                       {crumb.label}
                     </Link>
@@ -73,7 +97,7 @@ export default function Navbar() {
 
         <div className="flex items-center space-x-4">
           <ThemeToggle />
-          
+
           {isConnected ? (
             <div className="flex items-center space-x-4">
               <div className="hidden sm:block bg-gray-100 dark:bg-gray-700 rounded-full px-4 py-2">
@@ -86,21 +110,21 @@ export default function Navbar() {
                   {account?.substring(0, 6)}...{account?.substring(account.length - 4)}
                 </span>
               </div>
-              <button
-                onClick={disconnectWallet}
-                className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-full text-sm transition"
-              >
+              <NavButton onClick={disconnectWallet} color="red">
                 Disconnect
-              </button>
+              </NavButton>
             </div>
           ) : (
-            <button
-              onClick={connectWallet}
-              className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-full transition"
-            >
+            <NavButton onClick={connectWallet} color="blue">
               Connect Wallet
-            </button>
+            </NavButton>
           )}
+          <NavButton 
+            onClick={() => window.location.href = '/landing'} 
+            color="orange"
+          >
+            Landing
+          </NavButton>
         </div>
       </div>
     </nav>
