@@ -1,5 +1,3 @@
-import { Link } from 'react-router-dom';
-
 export default function Hero() {
   return (
     <div className="bg-blue-50 dark:bg-gray-800 py-20 transition-colors">
