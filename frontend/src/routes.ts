@@ -1,9 +1,9 @@
 import { ReactNode } from 'react';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
-import Dev from './pages/Dev'; // Import the new Dev component
+import Dev from './pages/Dev';
+import Landing from './pages/Landing';
 
-// Define the route type
 export interface RouteConfig {
   path: string;
   component: React.ComponentType<any>;
@@ -39,7 +39,13 @@ export const routes: RouteConfig[] = [
     showInNav: true,
     description: 'Tools and resources for blockchain developers'
   },
-  // Add more routes as needed
+  {
+    path: '/landing',
+    component: Landing,
+    label: 'Landing',
+    showInNav: true,
+    description: 'Landing page for marketing and promotion'
+  }
 ];
 
 // Helper function to get routes for navigation
