@@ -1,4 +1,4 @@
-export default function Contracts(): JSX.Element {
+export default function Contract(): JSX.Element {
     return (
         <div >
             <div>Contracts</div>
