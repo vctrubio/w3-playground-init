@@ -2,6 +2,7 @@ import { useState } from "react";
 import Account from "@/components/boxify/Account";
 import Contract from "@/components/boxify/Contract";
 import Brainstorm from "@/components/boxify/Brainstorm";
+import ContractExplorer from "@/components/boxify/ContractExplorer";
 import { BoxContainer, BoxProps } from "../components/boxify/BoxInterface";
 
 export default function Home() {
