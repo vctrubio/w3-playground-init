@@ -1,15 +1,6 @@
 import { useState, useEffect } from "react";
 import { DropdownList, ListItem } from "@/components/DropdownList";
-import { entry, getAccounti} from "@/lib/ethera.js";
-import {
-    checkExistingConnection,
-    connectWallet,
-    disconnectWallet,
-} from "@/lib/account";
-
-export interface AccountProps {
-    onAddressChange?: (address: string) => void;
-}
+import { entry, getAccounti, connectWallet, getBalance, getChainId} from "@/lib/ethera.js";
 
 const initialTasks: ListItem[] = [
     {
@@ -46,9 +37,181 @@ interface WalletStatus {
     address: string | null;
     chainId: string | null;
     balance: number | null;
-    loggedIn: bool;
+    loggedIn: boolean;
     apiResponse: Record<string, any>;
 }
+
+const UserStoryWallet = ({ walletStatus, setWalletStatus }: { walletStatus: WalletStatus, setWalletStatus: React.Dispatch<React.SetStateAction<WalletStatus>> }) => {
+    const [step, setStep] = useState(1);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleConnectWallet = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const accounts = await connectWallet();
+            if (accounts && accounts.length > 0) {
+                setWalletStatus(prev => ({
+                    ...prev,
+                    address: accounts[0],
+                    loggedIn: true
+                }));
+                setStep(2);
+            } else {
+                setError("No accounts returned from wallet");
+            }
+        } catch (err) {
+            setError(`Failed to connect wallet: ${err instanceof Error ? err.message : String(err)}`);
+            console.error("Connection error:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCheckChain = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const chainId = await getChainId();
+            setWalletStatus(prev => ({
+                ...prev,
+                chainId: chainId
+            }));
+            setStep(3);
+        } catch (err) {
+            setError(`Failed to get chain ID: ${err instanceof Error ? err.message : String(err)}`);
+            console.error("Chain ID error:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCheckBalance = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            if (!walletStatus.address) {
+                throw new Error("No wallet address available");
+            }
+            
+            const balanceWei = await getBalance(walletStatus.address);
+            // Convert from Wei to Ether for display
+            const balanceEth = parseFloat(balanceWei) / 1e18;
+            
+            setWalletStatus(prev => ({
+                ...prev,
+                balance: balanceEth
+            }));
+            setStep(4);
+        } catch (err) {
+            setError(`Failed to get balance: ${err instanceof Error ? err.message : String(err)}`);
+            console.error("Balance error:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const resetGame = () => {
+        setStep(1);
+        setWalletStatus(prev => ({
+            ...prev,
+            address: null,
+            chainId: null,
+            balance: null,
+            loggedIn: false
+        }));
+        setError(null);
+    };
+
+    return (
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-md border">
+            <h3 className="text-lg font-medium mb-4">Wallet User Story Game</h3>
+            
+            <div className="mb-4">
+                <div className="flex items-center mb-2">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${step >= 1 ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'}`}>1</div>
+                    <span className="font-medium">Connect Wallet</span>
+                    {walletStatus.address && <span className="ml-2 text-green-500">✓</span>}
+                </div>
+                
+                {step === 1 && (
+                    <div className="ml-11 mb-4">
+                        <p className="mb-2 text-sm">Connect your wallet to continue.</p>
+                        <button 
+                            onClick={handleConnectWallet}
+                            disabled={loading}
+                            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+                        >
+                            {loading ? 'Connecting...' : 'Connect Wallet'}
+                        </button>
+                    </div>
+                )}
+                
+                <div className="flex items-center mb-2">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${step >= 2 ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'}`}>2</div>
+                    <span className="font-medium">Identify Chain</span>
+                    {walletStatus.chainId && <span className="ml-2 text-green-500">✓</span>}
+                </div>
+                
+                {step === 2 && (
+                    <div className="ml-11 mb-4">
+                        <p className="mb-2 text-sm">Great! Now let's check which blockchain network you're connected to.</p>
+                        <button 
+                            onClick={handleCheckChain}
+                            disabled={loading}
+                            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+                        >
+                            {loading ? 'Checking...' : 'Check Chain'}
+                        </button>
+                    </div>
+                )}
+                
+                <div className="flex items-center mb-2">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${step >= 3 ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'}`}>3</div>
+                    <span className="font-medium">Check Balance</span>
+                    {walletStatus.balance !== null && <span className="ml-2 text-green-500">✓</span>}
+                </div>
+                
+                {step === 3 && (
+                    <div className="ml-11 mb-4">
+                        <p className="mb-2 text-sm">Now let's check your wallet balance.</p>
+                        <button 
+                            onClick={handleCheckBalance}
+                            disabled={loading}
+                            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+                        >
+                            {loading ? 'Loading...' : 'Check Balance'}
+                        </button>
+                    </div>
+                )}
+                
+                {step === 4 && (
+                    <div className="ml-11 bg-green-100 dark:bg-green-900 p-4 rounded-md">
+                        <p className="text-green-700 dark:text-green-300 font-medium">Congratulations! You've completed all steps.</p>
+                        <div className="mt-4">
+                            <p><strong>Your Address:</strong> {walletStatus.address}</p>
+                            <p><strong>Chain ID:</strong> {walletStatus.chainId}</p>
+                            <p><strong>Balance:</strong> {walletStatus.balance?.toFixed(4)} ETH</p>
+                        </div>
+                        <button 
+                            onClick={resetGame}
+                            className="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                        >
+                            Start Over
+                        </button>
+                    </div>
+                )}
+                
+                {error && (
+                    <div className="ml-11 bg-red-100 dark:bg-red-900 p-3 rounded-md text-red-700 dark:text-red-300 text-sm mt-2">
+                        {error}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
 
 const WorkingOn = ({}: { }) => {
     const [walletStatus, setWalletStatus] = useState<WalletStatus>({
@@ -71,6 +234,7 @@ const WorkingOn = ({}: { }) => {
 
                 if (apiResponse.windowEthereum) {
                     const accounts = await getAccounti();
+                    console.log('accounts', accounts)
                     if (accounts && accounts.length > 0) {
                         setWalletStatus((prev) => ({
                             ...prev,
@@ -92,27 +256,20 @@ const WorkingOn = ({}: { }) => {
             const apiResponse: Record<string, any> = entry();
             if (apiResponse) walletStatus.apiResponse = apiResponse;
         } catch (error) {
-            setConnectionStatus(
-                `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
-            );
+        console.log('error checking connection', error)
         }
     };
 
     window.ws = walletStatus;
 
     return (
-          <div className="bg-white dark:bg-gray-900 p-4 rounded-md border mb-2">
+        <div className="flex flex-col gap-4">
+            <div className="bg-white dark:bg-gray-900 p-4 rounded-md border mb-2">
                 <div
                     onClick={handleCheckConnection}
                     className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-2 rounded-md border mb-2"
                 >
                     Check Existing Connection 
-
-                </div>
-
-                <div>
-                    <div>Login Bar</div>
-                    <div>{walletStatus.loggedIn? 'user logged in': 'user not logged in'}</div>
                 </div>
 
                 {Object.keys(walletStatus.apiResponse).length > 0 && (
@@ -121,56 +278,14 @@ const WorkingOn = ({}: { }) => {
                     </div>
                 )}
             </div>
+            
+            <UserStoryWallet walletStatus={walletStatus} setWalletStatus={setWalletStatus} />
+        </div>
     );
 };
 
-export default function Account({
-    onAddressChange,
-}: AccountProps): JSX.Element {
-    const [address, setAddress] = useState<string>("");
+export default function Account(){
     const [tasks, setTasks] = useState<ListItem[]>(initialTasks);
-    const [connectionError, setConnectionError] = useState<string>("");
-    const [disconnectStatus, setDisconnectStatus] = useState<string>("");
-
-    const handleConnectWallet = async () => {
-        try {
-            setConnectionError("");
-            const result = await connectWallet();
-            setAddress(result.address);
-
-            // Pass the address back to the parent
-            if (onAddressChange) {
-                onAddressChange(result.address);
-            }
-        } catch (error) {
-            const errorMessage =
-                error instanceof Error
-                    ? error.message
-                    : "Unknown error connecting wallet";
-            setConnectionError(errorMessage);
-            console.error("Wallet connection error:", error);
-        }
-    };
-
-    const handleDisconnectWallet = async () => {
-        try {
-            setDisconnectStatus("Disconnecting...");
-            await disconnectWallet();
-            setAddress("");
-            setDisconnectStatus("Disconnected successfully");
-
-            if (onAddressChange) {
-                onAddressChange("");
-            }
-        } catch (error) {
-            const errorMessage =
-                error instanceof Error
-                    ? error.message
-                    : "Unknown error disconnecting wallet";
-            setDisconnectStatus(`Error: ${errorMessage}`);
-            console.error("Wallet disconnection error:", error);
-        }
-    };
 
     const handleTaskToggle = (id: string, completed: boolean) => {
         setTasks(
@@ -181,40 +296,6 @@ export default function Account({
     return (
         <div className="flex flex-col gap-4">
             <WorkingOn />
-
-            {/* <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-md"> */}
-            {/*     {address ? */}
-            {/*         <div className="flex flex-col mb-2"> */}
-            {/*             <span className="text-gray-500 dark:text-gray-400 text-sm">Connected Address:</span> */}
-            {/*             <span className="font-mono text-blue-600 dark:text-blue-400">{address}</span> */}
-            {/*         </div> : */}
-            {/*         <div className="text-gray-500 dark:text-gray-400 mb-2">Not connected to a wallet</div> */}
-            {/*     } */}
-            {/**/}
-            {/*     {connectionError && ( */}
-            {/*         <div className="text-red-500 text-sm mb-2">{connectionError}</div> */}
-            {/*     )} */}
-            {/**/}
-            {/*     {disconnectStatus && ( */}
-            {/*         <div className="text-sm mb-2 text-gray-600 dark:text-gray-400">{disconnectStatus}</div> */}
-            {/*     )} */}
-            {/**/}
-            {/*     <div className="flex gap-4"> */}
-            {/*         <button */}
-            {/*             onClick={handleConnectWallet} */}
-            {/*             className="border bg-blue-500 hover:bg-blue-600 text-white w-6/12 px-4 py-2 rounded" */}
-            {/*         > */}
-            {/*             {address ? 'Change Address' : 'Connect Wallet'} */}
-            {/*         </button> */}
-            {/*         <button */}
-            {/*             onClick={handleDisconnectWallet} */}
-            {/*             className="border bg-gray-500 hover:bg-gray-600 text-white w-6/12 px-4 py-2 rounded" */}
-            {/*             disabled={!address} */}
-            {/*         > */}
-            {/*             Disconnect Wallet */}
-            {/*         </button> */}
-            {/*     </div> */}
-            {/* </div> */}
 
             <DropdownList
                 title="Wallet Integration Tasks"

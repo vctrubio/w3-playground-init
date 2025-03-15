@@ -33,7 +33,7 @@ export async function getAccounti() {
   return accounts;
 }
 
-async function connectWallet() {
+export async function connectWallet() {
   try {
     const accounts = await window.ethereum.request({
       method: "eth_requestAccounts",
@@ -41,6 +41,25 @@ async function connectWallet() {
     return accounts;
   } catch (error) {
     console.error("User denied account access:", error);
+    throw error; // Make sure we're throwing the error for proper handling
+  }
+}
+
+/**
+ * Get the balance of an Ethereum address
+ * @param address The Ethereum address to check
+ * @returns A promise resolving to the balance in wei as a string
+**/
+export async function getBalance(address: string) {
+  try {
+    const balance = await window.ethereum.request({
+      method: "eth_getBalance",
+      params: [address, "latest"]
+    });
+    return balance; // This is a hex string representing wei
+  } catch (error) {
+    console.error("Error getting balance:", error);
+    throw error;
   }
 }
 
@@ -49,7 +68,7 @@ Description: Retrieves the chain ID of the currently connected network.
 Returns: A promise resolving to a hexadecimal string (e.g., "0x1" for Mainnet).
 What You Can Do: Verify or display the current network.
 */
-async function getChainId() {
+export async function getChainId() {
   const chainId = await window.ethereum.request({ method: "eth_chainId" });
   return chainId;
 }
