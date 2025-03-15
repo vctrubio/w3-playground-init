@@ -1,22 +1,22 @@
-import { useWallet } from '../contexts/WalletContext';
-import ThemeToggle from './ThemeToggle';
-import { Link, useLocation } from 'react-router-dom';
-import { useMemo } from 'react';
-import Logo from './Logo';
+import { useWallet } from "../contexts/WalletContext";
+import ThemeToggle from "./ThemeToggle";
+import { Link, useLocation } from "react-router-dom";
+import { useMemo } from "react";
+import Logo from "./Logo";
 
-const NavButton = ({ 
-  onClick, 
-  color = "blue", 
-  children 
-}: { 
-  onClick: () => void, 
-  color?: "blue" | "red" | "orange", 
-  children: React.ReactNode 
+const NavButton = ({
+  onClick,
+  color = "blue",
+  children,
+}: {
+  onClick: () => void;
+  color?: "blue" | "red" | "orange";
+  children: React.ReactNode;
 }) => {
   const colorClasses = {
     blue: "bg-blue-600 hover:bg-blue-700",
     red: "bg-red-600 hover:bg-red-700",
-    orange: "bg-orange-800 hover:bg-orange-500"
+    orange: "bg-orange-800 hover:bg-orange-500",
   };
 
   return (
@@ -30,19 +30,20 @@ const NavButton = ({
 };
 
 export default function Navbar() {
-  const { account, isConnected, balance, connectWallet, disconnectWallet } = useWallet();
+  const { account, isConnected, balance, connectWallet, disconnectWallet } =
+    useWallet();
   const location = useLocation();
 
   // Generate breadcrumb segments from current path
   const breadcrumbs = useMemo(() => {
-    const pathSegments = location.pathname.split('/').filter(Boolean);
+    const pathSegments = location.pathname.split("/").filter(Boolean);
 
-    // Start with home 
-    const crumbs = [{ path: '/', label: 'Home' }];
+    // Start with home
+    const crumbs = [{ path: "/", label: "Home" }];
 
     // Build up the paths for each segment
-    let currentPath = '';
-    pathSegments.forEach(segment => {
+    let currentPath = "";
+    pathSegments.forEach((segment) => {
       currentPath += `/${segment}`;
       // Capitalize the first letter of each segment
       const label = segment.charAt(0).toUpperCase() + segment.slice(1);
@@ -52,7 +53,7 @@ export default function Navbar() {
     return crumbs;
   }, [location.pathname]);
 
-  const isHomePage = location.pathname === '/';
+  const isHomePage = location.pathname === "/";
 
   return (
     <nav className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow p-4 transition-colors">
@@ -65,8 +66,19 @@ export default function Navbar() {
           {!isHomePage && (
             <div className="flex items-center ml-4">
               <span className="text-gray-400 dark:text-gray-500 mx-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </span>
               <div className="flex items-center">
@@ -74,16 +86,27 @@ export default function Navbar() {
                   <div key={crumb.path} className="flex items-center">
                     {index > 0 && (
                       <span className="mx-2 text-gray-400 dark:text-gray-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
                         </svg>
                       </span>
                     )}
                     <Link
                       to={crumb.path}
                       className={`${index === breadcrumbs.length - 2
-                        ? 'text-gray-900 dark:text-white font-medium'
-                        : 'text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                        ? "text-gray-900 dark:text-white font-medium"
+                        : "text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
                         }`}
                     >
                       {crumb.label}
@@ -98,29 +121,30 @@ export default function Navbar() {
         <div className="flex items-center space-x-4">
           <ThemeToggle />
 
-          {isConnected ? (
-            <div className="flex items-center space-x-4">
-              <div className="hidden sm:block bg-gray-100 dark:bg-gray-700 rounded-full px-4 py-2">
-                <span className="text-sm text-gray-600 dark:text-gray-300">
-                  {balance.substring(0, 6)} ETH
-                </span>
-              </div>
-              <div className="bg-gray-100 dark:bg-gray-700 rounded-full px-4 py-2">
-                <span className="text-sm">
-                  {account?.substring(0, 6)}...{account?.substring(account.length - 4)}
-                </span>
-              </div>
-              <NavButton onClick={disconnectWallet} color="red">
-                Disconnect
-              </NavButton>
-            </div>
-          ) : (
-            <NavButton onClick={connectWallet} color="blue">
-              Connect Wallet
-            </NavButton>
-          )}
-          <NavButton 
-            onClick={() => window.location.href = '/landing'} 
+          {/* {isConnected ? ( */}
+          {/*   <div className="flex items-center space-x-4"> */}
+          {/*     <div className="hidden sm:block bg-gray-100 dark:bg-gray-700 rounded-full px-4 py-2"> */}
+          {/*       <span className="text-sm text-gray-600 dark:text-gray-300"> */}
+          {/*         {balance.substring(0, 6)} ETH */}
+          {/*       </span> */}
+          {/*     </div> */}
+          {/*     <div className="bg-gray-100 dark:bg-gray-700 rounded-full px-4 py-2"> */}
+          {/*       <span className="text-sm"> */}
+          {/*         {account?.substring(0, 6)}...{account?.substring(account.length - 4)} */}
+          {/*       </span> */}
+          {/*     </div> */}
+          {/*     <NavButton onClick={disconnectWallet} color="red"> */}
+          {/*       Disconnect */}
+          {/*     </NavButton> */}
+          {/*   </div> */}
+          {/* ) : ( */}
+          {/*   <NavButton onClick={connectWallet} color="blue"> */}
+          {/*     Connect Wallet */}
+          {/*   </NavButton> */}
+          {/* )} */}
+
+          <NavButton
+            onClick={() => (window.location.href = "/landing")}
             color="orange"
           >
             Landing
