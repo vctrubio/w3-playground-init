@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { DropdownList, ListItem } from "@/components/DropdownList";
-import { entry, getAccounti } from "@/lib/ethera.js";
+import { entry, getAccounti } from "@/lib/windowEthereum.js";
 import AccountUserStory from "./AccountUserStory";
 import { User } from "@/lib/types";
 

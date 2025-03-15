@@ -8,7 +8,7 @@ import {
   getBlockNumber,
   getBlockByNumber,
   getTransactionHistory,
-} from "@/lib/ethera.js";
+} from "@/lib/windowEthereum.js";
 
 // Updated interface for props using the User type
 export interface AccountUserStoryProps {
