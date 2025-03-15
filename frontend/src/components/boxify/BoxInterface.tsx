@@ -1,6 +1,5 @@
 import React from 'react';
 
-// Core interface for box modules - everything defined inline
 export interface BoxProps {
   id: string;
   label: string;
@@ -10,7 +9,6 @@ export interface BoxProps {
     dark: string;
     light: string;
   };
-  // Any additional props are passed directly to the component
   [key: string]: any;
 }
 
@@ -37,7 +35,6 @@ export function Box({
   );
 }
 
-// The container component for multiple boxes
 export interface BoxContainerProps {
   modules: BoxProps[];
 }
