@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { DropdownList, ListItem } from "@/components/DropdownList";
-import { entry } from "@/lib/ethers.js"
+import { entry } from "@/lib/ethers.js";
 import {
     checkExistingConnection,
     connectWallet,
@@ -43,7 +43,6 @@ const initialTasks: ListItem[] = [
     },
 ];
 
-
 interface WalletStatus {
     address: string;
     chainId: string;
@@ -59,19 +58,20 @@ const WorkingOn = ({
     setAddress: (address: string) => void;
     onAddressChange?: (address: string) => void;
 }) => {
-    const [walletStatus, setWalletStatus]= useState<WalletStatus | null>(null);
+    const [walletStatus, setWalletStatus] = useState<WalletStatus | null>(null);
     const [ftStatus, setFtStatus] = useState<string>("");
 
     const handleCheckConnection = async () => {
         setFtStatus("calling....");
         try {
             const apiResponse: Record<string, any> = entry();
+            if (apiResponse) setFtStatus(JSON.stringify(apiResponse, null, 8));
+            else setFtStatus("response not recieved");
         } catch (error) {
             setConnectionStatus(
                 `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
             );
         }
-        setFtStatus("call ended");
     };
 
     const HandleConnection = () => {
