@@ -1,5 +1,4 @@
-import React from 'react';
-
+import React, { useState } from 'react';
 export interface BoxProps {
   id: string;
   label: string;
@@ -12,34 +11,43 @@ export interface BoxProps {
   [key: string]: any;
 }
 
-export function Box({ 
-  label, 
-  component: Component, 
+export function Box({
+  label,
+  component: Component,
   theme,
   id,
   path,
-  ...componentProps // All other props are forwarded to the component
+  ...componentProps
 }: BoxProps): JSX.Element {
+  const [isVisible, setIsVisible] = useState<boolean>(true);
   const darkBg = theme?.dark || 'bg-gray-800';
   const lightBg = theme?.light || 'bg-gray-100';
-  
+
+  const toggleVisibility = () => {
+    setIsVisible(prev => !prev);
+  };
+
   return (
     <div className="relative border p-4 rounded m-8 min-h-20">
-      <div className={`absolute left-2 top-0 -mt-5 z-10 p-2 border rounded cursor-pointer ${lightBg} dark:${darkBg} dark:text-blue-500 text-orange-500`}>
-        {label}
+      <div
+        className={`absolute left-2 top-0 -mt-5 z-10 p-2 border rounded cursor-pointer ${lightBg} dark:${darkBg} dark:text-blue-500 text-orange-500`}
+        onClick={toggleVisibility}
+      >
+        {label} {isVisible ? '[X]' : '▶'}
       </div>
-      <div className="pt-4">
+      <div
+        className={`pt-4 transition-all duration-300 ease-in-out ${isVisible
+          ? 'opacity-100 max-h-screen'
+          : 'opacity-0 max-h-0 overflow-hidden'
+          }`}
+      >
         <Component {...componentProps} />
       </div>
     </div>
   );
 }
 
-export interface BoxContainerProps {
-  modules: BoxProps[];
-}
-
-export function BoxContainer({ modules }: BoxContainerProps): JSX.Element {
+export function BoxContainer({ modules }: { modules: BoxProps[] }): JSX.Element {
   return (
     <div >
       {modules.map((module) => (
