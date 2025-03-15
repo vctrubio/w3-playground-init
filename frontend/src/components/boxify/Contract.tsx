@@ -9,7 +9,8 @@ import {
   detectContractStandard,
   getNFTsOwnedByAddress,
   checkERC1155OperatorApproval,
-  getERC20BalanceForAddress
+  getERC20BalanceForAddress,
+  getProviderAndValidateAddress
 } from '@/lib/etherav2';
 import { useState } from 'react';
 
@@ -292,6 +293,35 @@ export default function Contract(): JSX.Element {
         },
     ];
 
+    // Testing utilities
+    const utilityButtons: ButtonConfig[] = [
+        {
+            label: "Test Address Validation",
+            action: async () => {
+                try {
+                    const addressToTest = inputs.tokenAddress || inputs.nftAddress || inputs.recipientAddress || inputs.holderAddress;
+                    if (!addressToTest) {
+                        setResult("Please enter an address to validate in any address field");
+                        return;
+                    }
+                    const provider = await getProviderAndValidateAddress(addressToTest);
+                    const network = await provider.getNetwork();
+                    setResult(JSON.stringify({
+                        success: true,
+                        message: `Address ${addressToTest} is valid`,
+                        addressTested: addressToTest,
+                        connectedNetwork: {
+                            name: network.name,
+                            chainId: network.chainId.toString()
+                        }
+                    }, null, 2));
+                } catch (error) {
+                    setResult(`Error: ${error instanceof Error ? error.message : String(error)}`);
+                }
+            }
+        }
+    ];
+
     return (
         <div className="p-4 space-y-4">
             <div className="text-xl font-bold">Contracts</div>
@@ -389,6 +419,22 @@ export default function Contract(): JSX.Element {
                             key={index}
                             onClick={btn.action}
                             className="dark:bg-green-600 bg-purple-600 hover:bg-purple-700 dark:hover:bg-green-700 text-white py-2 px-4 rounded"
+                        >
+                            {btn.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Utility Testing */}
+            <div>
+                <h3 className="mb-2 font-semibold">Utils & Testing</h3>
+                <div className="flex flex-wrap gap-2 mb-4">
+                    {utilityButtons.map((btn, index) => (
+                        <button
+                            key={index}
+                            onClick={btn.action}
+                            className="dark:bg-yellow-600 bg-teal-600 hover:bg-teal-700 dark:hover:bg-yellow-700 text-white py-2 px-4 rounded"
                         >
                             {btn.label}
                         </button>

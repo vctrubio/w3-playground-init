@@ -41,7 +41,7 @@ const ERC1155_ABI = [
 /**
  * Connects to a provider and validates an address
  */
-async function getProviderAndValidateAddress(address: string) {
+export async function getProviderAndValidateAddress(address: string) {
   const provider = new ethers.BrowserProvider(window.ethereum);
   await provider.send("eth_requestAccounts", []);
   
