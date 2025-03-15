@@ -1,10 +1,5 @@
 import { ethers } from "ethers";
 
-/*
-  we need a provider , a wallet and a X? to make a transaction
-*/
-
-
 export function entry(): Record<string, any> {
   console.log("call me anytime");
 
@@ -12,45 +7,37 @@ export function entry(): Record<string, any> {
 
   const { ethereum } = window;
 
-  if (typeof window.ethereum === "undefined"){
+  if (typeof window.ethereum === "undefined") {
     return {
       status: 444,
-      msg: "get out of here"
-    }
+      msg: "get out of here",
+    };
   }
 
   if (ethereum) {
     e.windowEthereum = true;
     e.windowIsMetaMask = ethereum.isMetaMask;
     e.windowIsConnected = ethereum.isConnected();
-    e.windowSelectedA = ethereum.selectedAddress; //if no wallet is connected = false --> call connectWallet();
+    e.windowSelectedA = ethereum.selectedAddress; // Selected address (null if not connected)
     e.windowChainId = ethereum.chainId;
   } else {
     e.windowEthereum = false;
   }
 
-
-  async function getters(){
-    const accounts = await getAccounts();
-    const wallet = await connectWallet();
-
-    console.log('cmp')
-  }
-
-  getters();
   return e;
 }
 
-
-//REQUEST GO HERE// 
-async function getAccounts() {
+//REQUEST GO HERE//
+export async function getAccounti() {
   const accounts = await window.ethereum.request({ method: "eth_accounts" });
   return accounts;
 }
 
 async function connectWallet() {
   try {
-    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+    const accounts = await window.ethereum.request({
+      method: "eth_requestAccounts",
+    });
     return accounts;
   } catch (error) {
     console.error("User denied account access:", error);
@@ -173,7 +160,7 @@ async function callContract() {
   }
 }
 
-//Event Listeners 
+//Event Listeners
 /*
 window.ethereum is an EventEmitter
 (following Node.js conventions), allowing you to listen for events emitted by the wallet.

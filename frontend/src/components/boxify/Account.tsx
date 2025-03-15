@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DropdownList, ListItem } from "@/components/DropdownList";
-import { entry } from "@/lib/ethers.js";
+import { entry, getAccounti} from "@/lib/ethera.js";
 import {
     checkExistingConnection,
     connectWallet,
@@ -11,7 +11,6 @@ export interface AccountProps {
     onAddressChange?: (address: string) => void;
 }
 
-// Convert the existing task array to the new ListItem format
 const initialTasks: ListItem[] = [
     {
         id: "task-1",
@@ -44,29 +43,54 @@ const initialTasks: ListItem[] = [
 ];
 
 interface WalletStatus {
-    address: string;
-    chainId: string;
-    balance: number;
+    address: string | null;
+    chainId: string | null;
+    balance: number | null;
     loggedIn: bool;
     apiResponse: Record<string, any>;
 }
 
-const WorkingOn = ({
-    setAddress,
-    onAddressChange,
-}: {
-    setAddress: (address: string) => void;
-    onAddressChange?: (address: string) => void;
-}) => {
-    const [walletStatus, setWalletStatus] = useState<WalletStatus | null>(null);
-    const [ftStatus, setFtStatus] = useState<string>("");
+const WorkingOn = ({}: { }) => {
+    const [walletStatus, setWalletStatus] = useState<WalletStatus>({
+        address: null,
+        chainId: null,
+        balance: null,
+        loggedIn: false,
+        apiResponse: {},
+    });
+
+    useEffect(()=> {
+        const initApi = async () => {
+            try {
+                const apiResponse = entry();
+
+                setWalletStatus((prev) => ({
+                    ...prev,
+                    apiResponse,
+                }));
+
+                if (apiResponse.windowEthereum) {
+                    const accounts = await getAccounti();
+                    if (accounts && accounts.length > 0) {
+                        setWalletStatus((prev) => ({
+                            ...prev,
+                            address: accounts[0],
+                            chainId: apiResponse.windowChainId || "",
+                            loggedIn: true,
+                        }));
+                    }
+                }
+            } catch (error) {
+                console.error("Error initializing wallet:", error);
+            }
+        };
+        initApi();
+    },[])
 
     const handleCheckConnection = async () => {
-        setFtStatus("calling....");
         try {
             const apiResponse: Record<string, any> = entry();
-            if (apiResponse) setFtStatus(JSON.stringify(apiResponse, null, 8));
-            else setFtStatus("response not recieved");
+            if (apiResponse) walletStatus.apiResponse = apiResponse;
         } catch (error) {
             setConnectionStatus(
                 `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -74,28 +98,29 @@ const WorkingOn = ({
         }
     };
 
-    const HandleConnection = () => {
-        return (
-            <div className="bg-white dark:bg-gray-900 p-4 rounded-md border mb-2">
+    window.ws = walletStatus;
+
+    return (
+          <div className="bg-white dark:bg-gray-900 p-4 rounded-md border mb-2">
                 <div
                     onClick={handleCheckConnection}
                     className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-2 rounded-md border mb-2"
                 >
-                    Check Existing Connection
+                    Check Existing Connection 
+
                 </div>
-                {ftStatus && (
-                    <div className="mt-2 p-4 min-h-[100px] rounded text-sm border min-h-100 text-gray-600 dark:text-gray-400">
-                        {ftStatus}
+
+                <div>
+                    <div>Login Bar</div>
+                    <div>{walletStatus.loggedIn? 'user logged in': 'user not logged in'}</div>
+                </div>
+
+                {Object.keys(walletStatus.apiResponse).length > 0 && (
+                    <div className="mt-2 p-4 min-h-[100px] rounded text-sm border text-gray-600 dark:text-gray-400">
+                        <pre>{JSON.stringify(walletStatus.apiResponse, null, 2)}</pre>
                     </div>
                 )}
             </div>
-        );
-    };
-
-    return (
-        <div>
-            <HandleConnection />
-        </div>
     );
 };
 
@@ -155,7 +180,7 @@ export default function Account({
 
     return (
         <div className="flex flex-col gap-4">
-            <WorkingOn setAddress={setAddress} onAddressChange={onAddressChange} />
+            <WorkingOn />
 
             {/* <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-md"> */}
             {/*     {address ? */}
