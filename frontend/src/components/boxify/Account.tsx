@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { DropdownList, ListItem } from "@/components/DropdownList";
+import { entry } from "@/lib/ethers.js"
 import {
     checkExistingConnection,
     connectWallet,
@@ -42,6 +43,15 @@ const initialTasks: ListItem[] = [
     },
 ];
 
+
+interface WalletStatus {
+    address: string;
+    chainId: string;
+    balance: number;
+    loggedIn: bool;
+    apiResponse: Record<string, any>;
+}
+
 const WorkingOn = ({
     setAddress,
     onAddressChange,
@@ -49,25 +59,19 @@ const WorkingOn = ({
     setAddress: (address: string) => void;
     onAddressChange?: (address: string) => void;
 }) => {
-    const [connectionStatus, setConnectionStatus] = useState<string>("");
+    const [walletStatus, setWalletStatus]= useState<WalletStatus | null>(null);
+    const [ftStatus, setFtStatus] = useState<string>("");
 
     const handleCheckConnection = async () => {
+        setFtStatus("calling....");
         try {
-            setConnectionStatus("Checking connection...");
-            const result = await checkExistingConnection();
-
-            if (result && result.address) {
-                setConnectionStatus(`Found connection: ${result.address}`);
-                setAddress(result.address);
-                if (onAddressChange) onAddressChange(result.address);
-            } else {
-                setConnectionStatus("No existing connection found");
-            }
+            const apiResponse: Record<string, any> = entry();
         } catch (error) {
             setConnectionStatus(
                 `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
             );
         }
+        setFtStatus("call ended");
     };
 
     const HandleConnection = () => {
@@ -79,9 +83,9 @@ const WorkingOn = ({
                 >
                     Check Existing Connection
                 </div>
-                {connectionStatus && (
-                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                        {connectionStatus}
+                {ftStatus && (
+                    <div className="mt-2 p-4 min-h-[100px] rounded text-sm border min-h-100 text-gray-600 dark:text-gray-400">
+                        {ftStatus}
                     </div>
                 )}
             </div>
