@@ -1,10 +1,9 @@
 import { ethers } from "ethers";
+import { BalanceInfo, Transaction } from "./types";
 
 export function entry(): Record<string, any> {
   console.log("call me anytime");
-
   const e: Record<string, any> = {}; // Start with an empty object
-
   const { ethereum } = window;
 
   if (typeof window.ethereum === "undefined") {
@@ -23,7 +22,6 @@ export function entry(): Record<string, any> {
   } else {
     e.windowEthereum = false;
   }
-
   return e;
 }
 
@@ -48,19 +46,61 @@ export async function connectWallet() {
 /**
  * Get the balance of an Ethereum address
  * @param address The Ethereum address to check
- * @returns A promise resolving to the balance in wei as a string
-**/
-export async function getBalance(address: string) {
+ * @returns A promise resolving to a BalanceInfo object
+ */
+export async function getBalance(address: string): Promise<BalanceInfo> {
   try {
-    const balance = await window.ethereum.request({
+    const balanceHex = await window.ethereum.request({
       method: "eth_getBalance",
       params: [address, "latest"]
     });
-    return balance; // This is a hex string representing wei
+    
+    // Convert hex string to decimal string to preserve precision
+    const balanceWei = ethers.formatUnits(balanceHex, 0);
+    
+    // Format as ETH with appropriate decimals
+    const ethValue = ethers.formatEther(balanceHex);
+    const numericValue = parseFloat(ethValue);
+    
+    // Format for display with appropriate decimal places
+    let formattedValue: string;
+    if (numericValue < 0.0001 && numericValue > 0) {
+      formattedValue = "< 0.0001"; // For very small values
+    } else {
+      formattedValue = numericValue.toFixed(4); // 4 decimal places for regular values
+    }
+    
+    return {
+      wei: balanceWei,
+      formatted: formattedValue,
+      value: numericValue
+    };
   } catch (error) {
     console.error("Error getting balance:", error);
     throw error;
   }
+}
+
+/**
+ * Get the native currency symbol for the current network
+ * @param chainId The chain ID to get the symbol for
+ * @returns A string representing the native currency symbol
+ */
+export function getCurrencySymbol(chainId: string | null): string {
+  if (!chainId) return "ETH";
+  
+  // Map of common network IDs to their currency symbols
+  const currencyMap: Record<string, string> = {
+    "0x1": "ETH",      // Ethereum Mainnet
+    "0x3": "tETH",     // Ropsten Testnet
+    "0x4": "tETH",     // Rinkeby Testnet
+    "0x5": "tETH",     // Goerli Testnet
+    "0xaa36a7": "SEP", // Sepolia Testnet
+    "0x89": "MATIC",   // Polygon Mainnet
+    "0x13881": "MATIC" // Mumbai Testnet
+  };
+  
+  return currencyMap[chainId] || "ETH"; // Default to ETH
 }
 
 /*
@@ -191,6 +231,114 @@ window.ethereum.on("accountsChanged", (accounts) => {});
 --on("disconnect", handler)
 
 removeListener(eventName, handler) : Description: Removes a specific event listener.
-
-
 */
+
+/**
+ * Get the current block number
+ * @returns A promise resolving to the current block number
+ */
+export async function getBlockNumber(): Promise<number> {
+  try {
+    const blockNumberHex = await window.ethereum.request({
+      method: "eth_blockNumber",
+      params: []
+    });
+    
+    // Convert hex string to number
+    return parseInt(blockNumberHex, 16);
+  } catch (error) {
+    console.error("Error getting block number:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get a block by number, including the hash
+ * @param blockNumber The block number to retrieve, or "latest"
+ * @returns A promise resolving to the block information
+ */
+export async function getBlockByNumber(blockNumber: number | "latest" = "latest"): Promise<any> {
+  try {
+    const blockNumberParam = blockNumber === "latest" ? "latest" : `0x${blockNumber.toString(16)}`;
+    
+    const block = await window.ethereum.request({
+      method: "eth_getBlockByNumber",
+      params: [blockNumberParam, false]
+    });
+    
+    return block;
+  } catch (error) {
+    console.error("Error getting block:", error);
+    throw error;
+  }
+}
+
+/**
+ * Represents a transaction in the transaction history ------ 4Later
+ */
+
+/**
+ * Get recent transactions for an address
+ * Note: This is a simplified version that uses a public API for Ethereum Mainnet
+ * For other networks, you'd need to adjust the API endpoint or use a different approach
+ * @param address The address to get transactions for
+ * @param limit Maximum number of transactions to return
+ * @returns A promise resolving to an array of transactions
+ */
+export async function getTransactionHistory(
+  address: string, 
+  limit: number = 5
+): Promise<Transaction[]> {
+  try {
+    // For a production app, you would want to use a more robust service like Etherscan API,
+    // The Graph, or your own node. This is a simplified implementation.
+    // Here we're using eth_getBlockByNumber to get recent blocks and filter for transactions
+    // involving the user's address
+    
+    const currentBlock = await getBlockNumber();
+    const transactions: Transaction[] = [];
+    const maxBlocks = 10; // Limit how many blocks we look back
+    
+    for (let i = 0; i < maxBlocks && transactions.length < limit; i++) {
+      const block = await getBlockByNumber(currentBlock - i);
+      
+      if (block && block.transactions) {
+        // For a full implementation, you would use eth_getTransactionByHash
+        // for each tx hash to get complete transaction details
+        for (const txHash of block.transactions) {
+          const tx = await window.ethereum.request({
+            method: "eth_getTransactionByHash",
+            params: [txHash]
+          });
+          
+          if (!tx) continue;
+          
+          // Check if this transaction involves our address
+          if (tx.from.toLowerCase() === address.toLowerCase() || 
+              (tx.to && tx.to.toLowerCase() === address.toLowerCase())) {
+            
+            const weiValue = parseInt(tx.value, 16);
+            const ethValue = weiValue / 1e18;
+            
+            transactions.push({
+              hash: tx.hash,
+              from: tx.from,
+              to: tx.to || "Contract Creation",
+              value: tx.value,
+              formattedValue: ethValue.toFixed(4) + " ETH",
+            });
+            
+            if (transactions.length >= limit) {
+              break;
+            }
+          }
+        }
+      }
+    }
+    
+    return transactions;
+  } catch (error) {
+    console.error("Error getting transaction history:", error);
+    throw error;
+  }
+}
