@@ -1,452 +1,546 @@
-import {helloEthers, helloEthersFather, getContractInfo, sendSimpleTransaction, readContractData, analyzeTransaction} from '@/lib/ethera';
-import { 
-  getERC20TokenInfo, 
-  checkERC20Allowance, 
-  prepareERC20Transfer,
-  getNFTCollectionInfo,
-  getNFTDetails,
-  getERC1155Balances,
-  detectContractStandard,
-  getNFTsOwnedByAddress,
-  checkERC1155OperatorApproval,
-  getERC20BalanceForAddress,
-  getProviderAndValidateAddress
-} from '@/lib/etherav2';
 import { useState } from 'react';
+import { entry } from '../../lib/eths';
+import { ethers } from 'ethers';
 
-interface ButtonConfig {
-    label: string;
-    action: () => void;
+// Default ABIs for common contract types
+const DEFAULT_ABIS = {
+  ERC20: [
+    'function name() view returns (string)',
+    'function symbol() view returns (string)',
+    'function decimals() view returns (uint8)',
+    'function totalSupply() view returns (uint256)',
+    'function balanceOf(address owner) view returns (uint256)',
+    'function transfer(address to, uint256 amount) returns (bool)'
+  ],
+  ERC721: [
+    'function name() view returns (string)',
+    'function symbol() view returns (string)',
+    'function balanceOf(address owner) view returns (uint256)',
+    'function ownerOf(uint256 tokenId) view returns (address)',
+    'function tokenURI(uint256 tokenId) view returns (string)'
+  ],
+  ERC1155: [
+    'function balanceOf(address account, uint256 id) view returns (uint256)',
+    'function balanceOfBatch(address[] accounts, uint256[] ids) view returns (uint256[])',
+    'function uri(uint256 id) view returns (string)',
+    'function isApprovedForAll(address account, address operator) view returns (bool)',
+    'function setApprovalForAll(address operator, bool approved)',
+    'function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes data)',
+    'function safeBatchTransferFrom(address from, address to, uint256[] ids, uint256[] amounts, bytes data)'
+  ]
+};
+
+// Sample contract addresses for testing
+const TEST_CONTRACTS = {
+  ERC20: [
+    { name: "USDC", address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" },
+    { name: "WETH", address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" },
+    { name: "DAI", address: "0x6B175474E89094C44Da98b954EedeAC495271d0F" }
+  ],
+  ERC721: [
+    { name: "BAYC", address: "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D" },
+    { name: "CryptoPunks", address: "0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB" },
+    { name: "Azuki", address: "0xED5AF388653567Af2F388E6224dC7C4b3241C544" }
+  ],
+  ERC1155: [
+    { name: "OpenSea Shared", address: "0x495f947276749Ce646f68AC8c248420045cb7b5e" },
+    { name: "Rarible", address: "0xB66a603f4cFe17e3D27B87a8BfCaD319856518B8" },
+    { name: "ENS Name Wrapper", address: "0x114D4603199df73e7D157787f8778E21fCd13066" }
+  ]
+};
+
+// Interface for contract function metadata
+interface ContractFunction {
+  name: string;
+  inputs: Array<{name: string; type: string}>;
+  outputs: Array<{type: string}>;
+  stateMutability: string;
 }
-
-interface InputFieldProps {
-    id: string;
-    label: string;
-    value: string;
-    onChange: (value: string) => void;
-    placeholder?: string;
-}
-
-const InputField = ({ id, label, value, onChange, placeholder }: InputFieldProps) => (
-    <div className="flex flex-col mb-2">
-        <label htmlFor={id} className="text-sm mb-1">{label}</label>
-        <input
-            id={id}
-            type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
-            className="p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
-        />
-    </div>
-);
 
 export default function Contract(): JSX.Element {
-    const [result, setResult] = useState<string>('');
-    const [inputs, setInputs] = useState({
-        tokenAddress: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // Default to WETH
-        nftAddress: '0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D',    // BAYC
-        tokenId: '1',
-        recipientAddress: '',
-        amount: '0.01',
-        spenderAddress: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D', // Uniswap Router
-        holderAddress: '',
-        operatorAddress: '',
-        tokenIds: '1,2,3' // For ERC1155 multiple token IDs
-    });
+  // Connection states
+  const [provider, setProvider] = useState<ethers.Provider | null>(null);
+  const [signer, setSigner] = useState<ethers.Signer | null>(null);
+  const [signerAddress, setSignerAddress] = useState<string>('');
 
-    const handleInputChange = (id: string, value: string) => {
-        setInputs(prev => ({ ...prev, [id]: value }));
-    };
+  // Contract states
+  const [contractAddress, setContractAddress] = useState<string>('');
+  const [contractABI, setContractABI] = useState<string>('');
+  const [abiType, setAbiType] = useState<'custom' | 'ERC20' | 'ERC721' | 'ERC1155'>('custom');
+  const [contract, setContract] = useState<ethers.Contract | null>(null);
+  const [contractFunctions, setContractFunctions] = useState<ContractFunction[]>([]);
+  
+  // Function execution states
+  const [selectedFunction, setSelectedFunction] = useState<ContractFunction | null>(null);
+  const [functionParams, setFunctionParams] = useState<{[key: string]: string}>({});
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [resultData, setResultData] = useState<any | null>(null);
 
-    const buttons: ButtonConfig[] = [
-        {
-            label: "helloEthers",
-            action: async () => {
-                try {
-                    const response = await helloEthers();
-                    setResult(JSON.stringify(response, null, 2));
-                } catch (error) {
-                    setResult(`Error: ${error instanceof Error ? error.message : String(error)}`);
-                }
-            }
-        },
-        {
-            label: "helloEthersFather",
-            action: async () => {
-                try {
-                    const response = await helloEthersFather();
-                    setResult(JSON.stringify(response, null, 2));
-                } catch (error) {
-                    setResult(`Error: ${error instanceof Error ? error.message : String(error)}`);
-                }
-            }
-        },
-        {
-            label: "Get Contract Info",
-            action: async () => {
-                try {
-                    const response = await getContractInfo();
-                    setResult(JSON.stringify(response, null, 2));
-                } catch (error) {
-                    setResult(`Error: ${error instanceof Error ? error.message : String(error)}`);
-                }
-            }
-        },
-        {
-            label: "Prepare Transaction",
-            action: async () => {
-                try {
-                    const response = await sendSimpleTransaction();
-                    setResult(JSON.stringify(response, null, 2));
-                } catch (error) {
-                    setResult(`Error: ${error instanceof Error ? error.message : String(error)}`);
-                }
-            }
-        },
-        {
-            label: "Read ERC20 Data",
-            action: async () => {
-                try {
-                    const response = await readContractData();
-                    setResult(JSON.stringify(response, null, 2));
-                } catch (error) {
-                    setResult(`Error: ${error instanceof Error ? error.message : String(error)}`);
-                }
-            }
-        },
-        {
-            label: "Analyze Transaction",
-            action: async () => {
-                try {
-                    const response = await analyzeTransaction();
-                    setResult(JSON.stringify(response, null, 2));
-                } catch (error) {
-                    setResult(`Error: ${error instanceof Error ? error.message : String(error)}`);
-                }
-            }
+  // Connect wallet and initialize provider/signer
+  const connectWallet = async () => {
+    setError(null);
+    setIsLoading(true);
+    try {
+      const signerObj = await entry();
+      const providerObj = signerObj.provider;
+      if (!providerObj) throw new Error("No provider available");
+      
+      setProvider(providerObj);
+      setSigner(signerObj);
+      setSignerAddress(await signerObj.getAddress());
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Failed to connect wallet");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load the contract ABI based on selected type
+  const handleAbiTypeChange = (type: 'custom' | 'ERC20' | 'ERC721' | 'ERC1155') => {
+    setAbiType(type);
+    if (type !== 'custom') {
+      setContractABI(JSON.stringify(DEFAULT_ABIS[type]));
+    } else {
+      setContractABI('');
+    }
+  };
+
+  // Set a test contract address
+  const setTestContractAddress = (address: string) => {
+    setContractAddress(address);
+  };
+
+  // Initialize contract and parse its functions
+  const initializeContract = () => {
+    setError(null);
+    setContract(null);
+    setContractFunctions([]);
+    setSelectedFunction(null);
+    setResultData(null);
+    
+    if (!contractAddress) {
+      setError("Contract address is required");
+      return;
+    }
+    
+    if (!ethers.isAddress(contractAddress)) {
+      setError("Invalid contract address format");
+      return;
+    }
+    
+    if (!contractABI) {
+      setError("Contract ABI is required");
+      return;
+    }
+    
+    try {
+      let abiArray;
+      try {
+        abiArray = JSON.parse(contractABI);
+      } catch (e) {
+        // If not valid JSON, try treating it as human-readable ABI format
+        abiArray = contractABI.split('\n').filter(line => line.trim() !== '');
+      }
+      
+      // Create contract instance
+      const contractInstance = new ethers.Contract(
+        contractAddress,
+        abiArray,
+        signer || provider
+      );
+      
+      setContract(contractInstance);
+      
+      // Parse functions from ABI
+      const parsedFunctions: ContractFunction[] = [];
+      const interface_ = contractInstance.interface;
+      
+      for (const fragment of interface_.fragments) {
+        if (fragment.type === "function") {
+          parsedFunctions.push({
+            name: fragment.name,
+            inputs: fragment.inputs.map((input: any) => ({
+              name: input.name,
+              type: input.type
+            })),
+            outputs: fragment.outputs?.map((output: any) => ({
+              type: output.type
+            })) || [],
+            stateMutability: fragment.stateMutability
+          });
         }
-    ];
+      }
+      
+      setContractFunctions(parsedFunctions);
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Failed to initialize contract");
+    }
+  };
 
-    // Advanced buttons using etherav2 functions
-    const advancedButtons: ButtonConfig[] = [
-        {
-            label: "Detect Contract Type",
-            action: async () => {
-                try {
-                    const contractAddress = inputs.tokenAddress || inputs.nftAddress;
-                    if (!contractAddress) {
-                        setResult("Please enter a contract address first");
-                        return;
-                    }
-                    const response = await detectContractStandard(contractAddress);
-                    setResult(JSON.stringify(response, null, 2));
-                } catch (error) {
-                    setResult(`Error: ${error instanceof Error ? error.message : String(error)}`);
-                }
-            }
-        },
-        {
-            label: "ERC20 Token Info",
-            action: async () => {
-                try {
-                    if (!inputs.tokenAddress) {
-                        setResult("Please enter a token address first");
-                        return;
-                    }
-                    const response = await getERC20TokenInfo(inputs.tokenAddress);
-                    setResult(JSON.stringify(response, null, 2));
-                } catch (error) {
-                    setResult(`Error: ${error instanceof Error ? error.message : String(error)}`);
-                }
-            }
-        },
-        {
-            label: "ERC20 Balance",
-            action: async () => {
-                try {
-                    if (!inputs.tokenAddress || !inputs.holderAddress) {
-                        setResult("Please enter token and holder addresses");
-                        return;
-                    }
-                    const response = await getERC20BalanceForAddress(inputs.tokenAddress, inputs.holderAddress);
-                    setResult(JSON.stringify(response, null, 2));
-                } catch (error) {
-                    setResult(`Error: ${error instanceof Error ? error.message : String(error)}`);
-                }
-            }
-        },
-        {
-            label: "ERC20 Allowance",
-            action: async () => {
-                try {
-                    if (!inputs.tokenAddress || !inputs.spenderAddress) {
-                        setResult("Please enter token and spender addresses");
-                        return;
-                    }
-                    const response = await checkERC20Allowance(inputs.tokenAddress, inputs.spenderAddress);
-                    setResult(JSON.stringify(response, null, 2));
-                } catch (error) {
-                    setResult(`Error: ${error instanceof Error ? error.message : String(error)}`);
-                }
-            }
-        },
-        {
-            label: "Prepare ERC20 Transfer",
-            action: async () => {
-                try {
-                    if (!inputs.tokenAddress || !inputs.recipientAddress || !inputs.amount) {
-                        setResult("Please enter token address, recipient, and amount");
-                        return;
-                    }
-                    const response = await prepareERC20Transfer(
-                        inputs.tokenAddress, 
-                        inputs.recipientAddress, 
-                        inputs.amount
-                    );
-                    setResult(JSON.stringify(response, null, 2));
-                } catch (error) {
-                    setResult(`Error: ${error instanceof Error ? error.message : String(error)}`);
-                }
-            }
-        },
-        {
-            label: "NFT Collection Info",
-            action: async () => {
-                try {
-                    if (!inputs.nftAddress) {
-                        setResult("Please enter an NFT contract address");
-                        return;
-                    }
-                    const response = await getNFTCollectionInfo(inputs.nftAddress);
-                    setResult(JSON.stringify(response, null, 2));
-                } catch (error) {
-                    setResult(`Error: ${error instanceof Error ? error.message : String(error)}`);
-                }
-            }
-        },
-        {
-            label: "NFT Token Details",
-            action: async () => {
-                try {
-                    if (!inputs.nftAddress || !inputs.tokenId) {
-                        setResult("Please enter NFT address and token ID");
-                        return;
-                    }
-                    const response = await getNFTDetails(inputs.nftAddress, inputs.tokenId);
-                    setResult(JSON.stringify(response, null, 2));
-                } catch (error) {
-                    setResult(`Error: ${error instanceof Error ? error.message : String(error)}`);
-                }
-            }
-        },
-        {
-            label: "NFTs By Owner",
-            action: async () => {
-                try {
-                    if (!inputs.nftAddress || !inputs.holderAddress) {
-                        setResult("Please enter NFT address and owner address");
-                        return;
-                    }
-                    const response = await getNFTsOwnedByAddress(inputs.nftAddress, inputs.holderAddress);
-                    setResult(JSON.stringify(response, null, 2));
-                } catch (error) {
-                    setResult(`Error: ${error instanceof Error ? error.message : String(error)}`);
-                }
-            }
-        },
-        {
-            label: "ERC1155 Balances",
-            action: async () => {
-                try {
-                    if (!inputs.nftAddress || !inputs.tokenIds) {
-                        setResult("Please enter ERC1155 address and token IDs");
-                        return;
-                    }
-                    // Convert comma-separated tokenIds to array
-                    const tokenIdArray = inputs.tokenIds
-                        .split(',')
-                        .map(id => id.trim())
-                        .filter(id => id);
-                        
-                    const response = await getERC1155Balances(inputs.nftAddress, tokenIdArray);
-                    setResult(JSON.stringify(response, null, 2));
-                } catch (error) {
-                    setResult(`Error: ${error instanceof Error ? error.message : String(error)}`);
-                }
-            }
-        },
-        {
-            label: "ERC1155 Approval",
-            action: async () => {
-                try {
-                    if (!inputs.nftAddress || !inputs.operatorAddress) {
-                        setResult("Please enter ERC1155 address and operator address");
-                        return;
-                    }
-                    const response = await checkERC1155OperatorApproval(inputs.nftAddress, inputs.operatorAddress);
-                    setResult(JSON.stringify(response, null, 2));
-                } catch (error) {
-                    setResult(`Error: ${error instanceof Error ? error.message : String(error)}`);
-                }
-            }
-        },
-    ];
+  // Select a function and reset parameters
+  const handleSelectFunction = (func: ContractFunction) => {
+    setSelectedFunction(func);
+    setFunctionParams({});
+    setResultData(null);
+  };
 
-    // Testing utilities
-    const utilityButtons: ButtonConfig[] = [
-        {
-            label: "Test Address Validation",
-            action: async () => {
-                try {
-                    const addressToTest = inputs.tokenAddress || inputs.nftAddress || inputs.recipientAddress || inputs.holderAddress;
-                    if (!addressToTest) {
-                        setResult("Please enter an address to validate in any address field");
-                        return;
-                    }
-                    const provider = await getProviderAndValidateAddress(addressToTest);
-                    const network = await provider.getNetwork();
-                    setResult(JSON.stringify({
-                        success: true,
-                        message: `Address ${addressToTest} is valid`,
-                        addressTested: addressToTest,
-                        connectedNetwork: {
-                            name: network.name,
-                            chainId: network.chainId.toString()
-                        }
-                    }, null, 2));
-                } catch (error) {
-                    setResult(`Error: ${error instanceof Error ? error.message : String(error)}`);
-                }
-            }
+  // Update function parameter
+  const handleParamChange = (paramName: string, value: string) => {
+    setFunctionParams(prev => ({
+      ...prev,
+      [paramName]: value
+    }));
+  };
+
+  // Execute selected contract function
+  const executeFunction = async () => {
+    if (!contract || !selectedFunction) return;
+    
+    setIsLoading(true);
+    setError(null);
+    setResultData(null);
+    
+    try {
+      const functionName = selectedFunction.name;
+      
+      // Convert parameters to the right format
+      const params = selectedFunction.inputs.map(input => {
+        const value = functionParams[input.name] || '';
+        
+        // Parse values based on type
+        if (input.type.includes('int')) {
+          // For integers/big numbers
+          return value === '' ? 0 : value;
         }
-    ];
+        if (input.type === 'bool') {
+          return value.toLowerCase() === 'true';
+        }
+        // For arrays, try to parse JSON
+        if (input.type.includes('[]')) {
+          try {
+            return JSON.parse(value);
+          } catch (e) {
+            return [];
+          }
+        }
+        // Default for address, string, etc.
+        return value;
+      });
+      
+      // Get the function from contract
+      const contractFunction = contract[functionName];
+      
+      if (!contractFunction) {
+        throw new Error(`Function ${functionName} not found in contract`);
+      }
+      
+      // Call or send based on state mutability
+      const isView = 
+        selectedFunction.stateMutability === 'view' || 
+        selectedFunction.stateMutability === 'pure';
+      
+      let result;
+      if (isView) {
+        // Read-only call
+        result = await contractFunction(...params);
+      } else {
+        // State-changing transaction
+        if (!signer) {
+          throw new Error("Signer required for non-view functions");
+        }
+        
+        // First estimate gas
+        const gasEstimate = await contract.connect(signer).estimateGas[functionName](...params);
+        
+        // Execute transaction
+        const tx = await contractFunction(...params);
+        result = {
+          hash: tx.hash,
+          gasLimit: gasEstimate.toString(),
+          wait: "Transaction sent. Waiting for confirmation...",
+        };
+        
+        // Wait for confirmation and update result
+        const receipt = await tx.wait();
+        result.receipt = {
+          status: receipt.status === 1 ? "Success" : "Failed",
+          blockNumber: receipt.blockNumber,
+          gasUsed: receipt.gasUsed.toString(),
+        };
+      }
+      
+      // Format result based on return type
+      let formattedResult = result;
+      
+      // Handle common return types for better display
+      if (ethers.isAddress(result)) {
+        formattedResult = {
+          address: result,
+          formatted: result
+        };
+      } else if (result?._isBigNumber || typeof result === 'bigint') {
+        // BigNumber result
+        formattedResult = {
+          raw: result.toString(),
+          formatted: ethers.formatUnits(result, 'ether'),
+          wei: result.toString()
+        };
+      } else if (Array.isArray(result)) {
+        // Format array items if they're big numbers
+        formattedResult = result.map(item => 
+          item?._isBigNumber || typeof item === 'bigint' 
+            ? { raw: item.toString(), formatted: ethers.formatUnits(item, 'ether') }
+            : item
+        );
+      }
+      
+      setResultData(formattedResult);
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Function execution failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    return (
-        <div className="p-4 space-y-4">
-            <div className="text-xl font-bold">Contracts</div>
-            <div className="mb-4">Contract Information</div>
-            
-            {/* Basic functions */}
-            <div>
-                <h3 className="mb-2 font-semibold">Basic Functions</h3>
-                <div className="flex flex-wrap gap-2 mb-4">
-                    {buttons.map((btn, index) => (
-                        <button
-                            key={index}
-                            onClick={btn.action}
-                            className="dark:bg-blue-500 bg-orange-500 dark:hover:bg-blue-600 text-white py-2 px-4 rounded"
-                        >
-                            {btn.label}
-                        </button>
-                    ))}
-                </div>
-            </div>
-            
-            {/* Input fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                <InputField
-                    id="tokenAddress"
-                    label="ERC20 Token Address"
-                    value={inputs.tokenAddress}
-                    onChange={(value) => handleInputChange("tokenAddress", value)}
-                    placeholder="0x..."
-                />
-                <InputField
-                    id="nftAddress"
-                    label="NFT Address (ERC721/ERC1155)"
-                    value={inputs.nftAddress}
-                    onChange={(value) => handleInputChange("nftAddress", value)}
-                    placeholder="0x..."
-                />
-                <InputField
-                    id="tokenId"
-                    label="Token ID"
-                    value={inputs.tokenId}
-                    onChange={(value) => handleInputChange("tokenId", value)}
-                    placeholder="1"
-                />
-                <InputField
-                    id="recipientAddress"
-                    label="Recipient Address"
-                    value={inputs.recipientAddress}
-                    onChange={(value) => handleInputChange("recipientAddress", value)}
-                    placeholder="0x..."
-                />
-                <InputField
-                    id="amount"
-                    label="Token Amount"
-                    value={inputs.amount}
-                    onChange={(value) => handleInputChange("amount", value)}
-                    placeholder="0.01"
-                />
-                <InputField
-                    id="spenderAddress"
-                    label="Spender Address"
-                    value={inputs.spenderAddress}
-                    onChange={(value) => handleInputChange("spenderAddress", value)}
-                    placeholder="0x..."
-                />
-                <InputField
-                    id="holderAddress"
-                    label="Holder/Owner Address"
-                    value={inputs.holderAddress}
-                    onChange={(value) => handleInputChange("holderAddress", value)}
-                    placeholder="0x..."
-                />
-                <InputField
-                    id="operatorAddress"
-                    label="Operator Address"
-                    value={inputs.operatorAddress}
-                    onChange={(value) => handleInputChange("operatorAddress", value)}
-                    placeholder="0x..."
-                />
-                <InputField
-                    id="tokenIds"
-                    label="Token IDs (comma-separated)"
-                    value={inputs.tokenIds}
-                    onChange={(value) => handleInputChange("tokenIds", value)}
-                    placeholder="1,2,3"
-                />
-            </div>
-            
-            {/* Advanced functions */}
-            <div>
-                <h3 className="mb-2 font-semibold">Advanced Functions</h3>
-                <div className="flex flex-wrap gap-2 mb-4">
-                    {advancedButtons.map((btn, index) => (
-                        <button
-                            key={index}
-                            onClick={btn.action}
-                            className="dark:bg-green-600 bg-purple-600 hover:bg-purple-700 dark:hover:bg-green-700 text-white py-2 px-4 rounded"
-                        >
-                            {btn.label}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            {/* Utility Testing */}
-            <div>
-                <h3 className="mb-2 font-semibold">Utils & Testing</h3>
-                <div className="flex flex-wrap gap-2 mb-4">
-                    {utilityButtons.map((btn, index) => (
-                        <button
-                            key={index}
-                            onClick={btn.action}
-                            className="dark:bg-yellow-600 bg-teal-600 hover:bg-teal-700 dark:hover:bg-yellow-700 text-white py-2 px-4 rounded"
-                        >
-                            {btn.label}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            {result && (
-                <div className="mt-4 p-3 rounded border">
-                    <pre className="whitespace-pre-wrap overflow-x-auto max-h-96 overflow-y-auto">{result}</pre>
-                </div>
-            )}
+  return (
+    <div className="p-4 space-y-6">
+      <div className="text-xl font-bold">Smart Contract Interface</div>
+      
+      {/* Wallet Connection */}
+      <div className="bg-white dark:bg-gray-800 p-4 rounded shadow-sm">
+        <h3 className="text-lg font-semibold mb-3">Wallet Connection</h3>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={connectWallet}
+            disabled={isLoading}
+            className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:opacity-50"
+          >
+            {isLoading ? "Connecting..." : "Connect Wallet"}
+          </button>
+          
+          {signerAddress && (
+            <span className="text-sm">
+              Connected: {signerAddress.substring(0, 6)}...{signerAddress.substring(38)}
+            </span>
+          )}
         </div>
-    );
+      </div>
+      
+      {/* Contract Setup */}
+      <div className="bg-white dark:bg-gray-800 p-4 rounded shadow-sm">
+        <h3 className="text-lg font-semibold mb-3">Contract Setup</h3>
+        
+        <div className="space-y-4">
+          {/* Contract Address */}
+          <div>
+            <label className="block text-sm mb-1">Contract Address</label>
+            <input
+              type="text"
+              value={contractAddress}
+              onChange={(e) => setContractAddress(e.target.value)}
+              placeholder="0x..."
+              className="w-full p-2 border rounded dark:bg-gray-900 dark:border-gray-700"
+            />
+            
+            {/* Test Contract Addresses */}
+            <div className="mt-2">
+              <p className="text-sm text-gray-500 mb-1">Test Contracts:</p>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(TEST_CONTRACTS).map(([standard, contracts]) => (
+                  <div key={standard} className="mb-2">
+                    <p className="text-xs font-medium mb-1">{standard}:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {contracts.map((contract, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setTestContractAddress(contract.address)}
+                          className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-2 py-1 rounded"
+                          title={contract.address}
+                        >
+                          {contract.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          {/* ABI Type Selection */}
+          <div>
+            <label className="block text-sm mb-1">ABI Type</label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => handleAbiTypeChange('custom')}
+                className={`py-1 px-3 rounded ${abiType === 'custom' ? 'bg-blue-100 dark:bg-blue-900' : 'bg-gray-100 dark:bg-gray-700'}`}
+              >
+                Custom ABI
+              </button>
+              <button
+                onClick={() => handleAbiTypeChange('ERC20')}
+                className={`py-1 px-3 rounded ${abiType === 'ERC20' ? 'bg-blue-100 dark:bg-blue-900' : 'bg-gray-100 dark:bg-gray-700'}`}
+              >
+                ERC20
+              </button>
+              <button
+                onClick={() => handleAbiTypeChange('ERC721')}
+                className={`py-1 px-3 rounded ${abiType === 'ERC721' ? 'bg-blue-100 dark:bg-blue-900' : 'bg-gray-100 dark:bg-gray-700'}`}
+              >
+                ERC721
+              </button>
+              <button
+                onClick={() => handleAbiTypeChange('ERC1155')}
+                className={`py-1 px-3 rounded ${abiType === 'ERC1155' ? 'bg-blue-100 dark:bg-blue-900' : 'bg-gray-100 dark:bg-gray-700'}`}
+              >
+                ERC1155
+              </button>
+            </div>
+          </div>
+          
+          {/* ABI Input */}
+          <div>
+            <label className="block text-sm mb-1">Contract ABI</label>
+            <textarea
+              value={contractABI}
+              onChange={(e) => setContractABI(e.target.value)}
+              placeholder="Enter contract ABI JSON or interface array..."
+              className="w-full p-2 border rounded dark:bg-gray-900 dark:border-gray-700 h-32 font-mono text-sm"
+            />
+          </div>
+          
+          <button
+            onClick={initializeContract}
+            disabled={isLoading || !contractAddress || !contractABI}
+            className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 disabled:opacity-50"
+          >
+            Initialize Contract
+          </button>
+        </div>
+      </div>
+      
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-100 dark:bg-red-900 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 p-3 rounded">
+          <strong>Error:</strong> {error}
+        </div>
+      )}
+      
+      {/* Contract Functions */}
+      {contract && contractFunctions.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 p-4 rounded shadow-sm">
+          <h3 className="text-lg font-semibold mb-3">Contract Functions</h3>
+          
+          {/* Function Type Filters */}
+          <div className="mb-4">
+            <span className="text-sm mr-2">Filter:</span>
+            <button className="mr-2 py-1 px-2 bg-blue-100 dark:bg-blue-900 rounded text-sm">All</button>
+            <button className="mr-2 py-1 px-2 bg-green-100 dark:bg-green-900 rounded text-sm">View/Pure</button>
+            <button className="py-1 px-2 bg-orange-100 dark:bg-orange-900 rounded text-sm">State Changing</button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
+            {contractFunctions.map((func, idx) => (
+              <div 
+                key={idx}
+                className={`border p-3 rounded cursor-pointer ${
+                  selectedFunction?.name === func.name 
+                    ? 'bg-blue-100 dark:bg-blue-900 border-blue-300 dark:border-blue-700' 
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                } ${
+                  func.stateMutability === 'view' || func.stateMutability === 'pure'
+                    ? 'border-l-4 border-l-green-500'
+                    : 'border-l-4 border-l-orange-500'
+                }`}
+                onClick={() => handleSelectFunction(func)}
+              >
+                <div className="font-medium">{func.name}</div>
+                <div className="text-xs text-gray-500">
+                  {func.stateMutability === 'view' || func.stateMutability === 'pure' 
+                    ? '📖 Read' 
+                    : '✏️ Write'}
+                </div>
+                {func.inputs.length > 0 && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    Inputs: {func.inputs.map(i => `${i.name}:${i.type}`).join(', ')}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {/* Selected Function Execution */}
+      {selectedFunction && (
+        <div className="bg-white dark:bg-gray-800 p-4 rounded shadow-sm">
+          <h3 className="text-lg font-semibold mb-2">{selectedFunction.name}</h3>
+          <div className="text-sm mb-3">
+            <span className={
+              selectedFunction.stateMutability === 'view' || selectedFunction.stateMutability === 'pure'
+                ? 'text-green-500'
+                : 'text-orange-500'
+            }>
+              {selectedFunction.stateMutability}
+            </span>
+            {selectedFunction.stateMutability !== 'view' && selectedFunction.stateMutability !== 'pure' && (
+              <span className="ml-2 text-gray-500">(Requires transaction)</span>
+            )}
+          </div>
+          
+          {/* Function Parameters */}
+          {selectedFunction.inputs.length > 0 && (
+            <div className="mb-4 space-y-3">
+              <h4 className="font-medium">Parameters:</h4>
+              {selectedFunction.inputs.map((input, idx) => (
+                <div key={idx} className="flex flex-col">
+                  <label className="text-sm mb-1">
+                    {input.name} <span className="text-gray-500 text-xs">({input.type})</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={functionParams[input.name] || ''}
+                    onChange={(e) => handleParamChange(input.name, e.target.value)}
+                    placeholder={`Enter ${input.type}`}
+                    className="p-2 border rounded dark:bg-gray-900 dark:border-gray-700"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <button
+            onClick={executeFunction}
+            disabled={isLoading || !contract}
+            className={`py-2 px-4 rounded text-white ${
+              selectedFunction.stateMutability === 'view' || selectedFunction.stateMutability === 'pure'
+                ? 'bg-green-500 hover:bg-green-600'
+                : 'bg-orange-500 hover:bg-orange-600'
+            } disabled:opacity-50`}
+          >
+            {isLoading 
+              ? "Executing..." 
+              : (selectedFunction.stateMutability === 'view' || selectedFunction.stateMutability === 'pure') 
+                ? `Call ${selectedFunction.name}` 
+                : `Send Transaction`
+            }
+          </button>
+        </div>
+      )}
+      
+      {/* Result Display */}
+      {resultData !== null && (
+        <div className="bg-white dark:bg-gray-800 p-4 rounded shadow-sm">
+          <h3 className="text-lg font-semibold mb-3">Result</h3>
+          <pre className="whitespace-pre-wrap overflow-x-auto max-h-96 overflow-y-auto p-2 bg-gray-100 dark:bg-gray-900 rounded">
+            {JSON.stringify(resultData, null, 2)}
+          </pre>
+        </div>
+      )}
+    </div>
+  );
 }
