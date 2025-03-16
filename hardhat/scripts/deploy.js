@@ -1,15 +1,14 @@
 const { ethers } = require("hardhat");
 
 async function main() {
-  console.log("Deploying SimpleStorage contract...");
 
-  const SimpleStorage = await ethers.getContractFactory("SimpleStorage");
-  const simpleStorage = await SimpleStorage.deploy();
+  const HelloWorld = await ethers.getContractFactory("HelloWorld");
+  const helloWorld = await HelloWorld.deploy();
 
-  await simpleStorage.waitForDeployment();
+  await helloWorld.waitForDeployment();
   
-  const address = await simpleStorage.getAddress();
-  console.log(`SimpleStorage deployed to: ${address}`);
+  const address = await helloWorld.getAddress();
+  console.log(`HelloWorld deployed to: ${address}`);
 }
 
 main()

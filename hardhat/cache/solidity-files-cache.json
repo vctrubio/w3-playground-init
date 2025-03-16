@@ -1,13 +1,14 @@
 {
   "_format": "hh-sol-cache-2",
   "files": {
-    "/Users/trtp/kode/w3/w3playgound/contracts/src/SimpleStorage.sol": {
-      "lastModificationDate": 1741877866089,
-      "contentHash": "a0f1a09e31337360fb21fec02ee6ebf9",
-      "sourceName": "src/SimpleStorage.sol",
+    "/Users/trtp/kode/w3/w3playgound/hardhat/contracts/HelloWorld.sol": {
+      "lastModificationDate": 1742077812962,
+      "contentHash": "db73cca769f725dc5a12dbd23f8769f4",
+      "sourceName": "contracts/HelloWorld.sol",
       "solcConfig": {
-        "version": "0.8.19",
+        "version": "0.8.20",
         "settings": {
+          "evmVersion": "paris",
           "optimizer": {
             "enabled": false,
             "runs": 200
@@ -30,10 +31,10 @@
       },
       "imports": [],
       "versionPragmas": [
-        "^0.8.19"
+        "^0.8.20"
       ],
       "artifacts": [
-        "SimpleStorage"
+        "HelloWorld"
       ]
     }
   }
