@@ -9,7 +9,7 @@
     "node": "hardhat node"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "hardhat": "^2.18.2"
   },
   "dependencies": {
