@@ -38,8 +38,8 @@
       ]
     },
     "/Users/trtp/kode/w3/w3playgound/hardhat/contracts/Erc1155.sol": {
-      "lastModificationDate": 1742213675440,
-      "contentHash": "69176db9a3bcefa0eb4ff2e61ab387df",
+      "lastModificationDate": 1742214489238,
+      "contentHash": "baacfed0f22f44a338eba32256e3168f",
       "sourceName": "contracts/Erc1155.sol",
       "solcConfig": {
         "version": "0.8.20",
