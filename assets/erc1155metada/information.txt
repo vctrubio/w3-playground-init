@@ -1,0 +1,12 @@
+images: uri updated to pinata
+{
+  IpfsHash: 'QmP3fEtx8zDNrk9QGuXKjfUNmKjQJ7MR97gCc4dcTf8qbK',
+  PinSize: 667615,
+  Timestamp: '2025-03-17T10:42:50.092Z',
+  ID: '6c25bee4-eb32-4160-ae50-1280f6397b7c',
+  Name: 'images',
+  NumberOfFiles: 4,
+  MimeType: 'directory',
+  GroupId: null,
+  Keyvalues: null
+}
