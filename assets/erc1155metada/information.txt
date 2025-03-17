@@ -12,10 +12,10 @@ images: uri updated to pinata
 }
 metada: uri updated to pinata
 {
-  IpfsHash: 'QmSy6h5hXjsJxMgwX753Cw1ufu8hpXwW7nHf5K5Tm6KqzC',
-  PinSize: 484,
-  Timestamp: '2025-03-17T11:48:00.056Z',
-  ID: 'f05db946-f013-4292-827d-1465323e81d3',
+  IpfsHash: 'QmW4mpt7g4dxxWzPB8A6HRkTfUP9WGNuPN1hWRXbicimzq',
+  PinSize: 577,
+  Timestamp: '2025-03-17T11:50:28.624Z',
+  ID: 'ac77c1a8-4e69-4a90-a8c5-e277f4ed2ab4',
   Name: 'metadata',
   NumberOfFiles: 3,
   MimeType: 'directory',
