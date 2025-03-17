@@ -10,7 +10,18 @@ function App() {
       <Router>
         <div className="min-h-screen flex flex-col dark:bg-gray-900 transition-colors">
           <Navbar />
-
+          <main className="flex-grow">
+            <Routes>
+              {routes.map((route) => (
+                <Route
+                  key={route.path}
+                  path={route.path}
+                  element={<route.component />}
+                />
+              ))}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </main>
           <Footer />
         </div>
       </Router>

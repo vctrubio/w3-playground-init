@@ -11,7 +11,4 @@ app.get("/", (c) => {
   return c.json({ message: "Welcome to the W3 Playground API" });
 });
 
-// Listen on port 3000
-app.listen(3000);
-
 export default app;
