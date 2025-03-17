@@ -2,4 +2,6 @@ node_modules
 backend/node_modules
 frontend/node_modules
 hardhat/node_modules
-
+hardhat/artifacts
+hardhat/cache
+hardhat/.env
