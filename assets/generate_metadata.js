@@ -4,7 +4,7 @@ if (typeof Bun === "undefined") {
   process.exit(1);
 }
 
-// Check for pinata-cli availability (simplified check)
+// Check for pinata-cli availability
 const { execSync } = require("child_process");
 try {
   execSync("pinata-cli --version", { stdio: "ignore" });
@@ -45,23 +45,13 @@ const cleanedExtension = extension.startsWith(".")
   ? extension.slice(1)
   : extension;
 
-// Simulated Pinata upload function
-const ipa = async (dir) => {
-  console.log(`Simulating Pinata upload for directory: ${dir}`);
-  // In reality: pinata-cli -u "$1"
-  return uri; // Return the provided URI for now (mocked)
-};
-
 // Function to generate metadata
 const generateMetadata = async () => {
-  // Simulate Pinata upload (mocked)
-  const uploadedUri = await ipa(destDir);
-
   for (let i = 0; i < size; i++) {
     const image = `${i}.${cleanedExtension}`;
     const metadata = {
       name: `${namePrefix} #${i}`,
-      image: `ipfs://${uploadedUri}/${image}`, // Prepend ipfs://
+      image: `ipfs://${uri}/${image}`, // Prepend ipfs://
     };
 
     const filePath = `${destDir}/${i}.json`;
@@ -77,7 +67,22 @@ const generateMetadata = async () => {
   console.log(
     `All metadata files generated successfully in the '${destDir}' directory!`,
   );
+
+  // Upload to Pinata after metadata generation
+  console.log(`Trying to upload: ${destDir}`);
+  const cmd = ["pinata-cli", "-u", destDir];
+  console.log(`Executing: ${cmd.join(" ")}`);
+
+  try {
+    const process = Bun.spawnSync(cmd, { stdout: "pipe", stderr: "pipe" });
+    const stdout = new TextDecoder().decode(process.stdout);
+    const stderr = new TextDecoder().decode(process.stderr);
+    const response = stdout || stderr; // Use stderr if stdout is empty
+    console.log("Response from Pinata:", response.trim());
+  } catch (error) {
+    console.error("Failed to upload to Pinata:", error);
+  }
 };
 
-// Run the metadata generation
+// Run the metadata generation and upload
 generateMetadata();
