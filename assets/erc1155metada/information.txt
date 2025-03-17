@@ -10,3 +10,15 @@ images: uri updated to pinata
   GroupId: null,
   Keyvalues: null
 }
+metada: uri updated to pinata
+{
+  IpfsHash: 'QmSy6h5hXjsJxMgwX753Cw1ufu8hpXwW7nHf5K5Tm6KqzC',
+  PinSize: 484,
+  Timestamp: '2025-03-17T11:48:00.056Z',
+  ID: 'f05db946-f013-4292-827d-1465323e81d3',
+  Name: 'metadata',
+  NumberOfFiles: 3,
+  MimeType: 'directory',
+  GroupId: null,
+  Keyvalues: null
+}
