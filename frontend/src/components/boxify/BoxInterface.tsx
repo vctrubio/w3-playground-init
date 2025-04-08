@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 export interface BoxProps {
   id: string;
   label: string;
-  path: string;
   component: React.ComponentType<any>;
   theme?: {
     dark: string;
@@ -16,7 +15,6 @@ export function Box({
   component: Component,
   theme,
   id,
-  path,
   ...componentProps
 }: BoxProps): JSX.Element {
   const [isVisible, setIsVisible] = useState<boolean>(true);
