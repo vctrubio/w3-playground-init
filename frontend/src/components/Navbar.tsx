@@ -144,10 +144,10 @@ export default function Navbar() {
           {/* )} */}
 
           <NavButton
-            onClick={() => (window.location.href = "/landing")}
+            onClick={() => (window.location.href = "/documentation")}
             color="orange"
           >
-            Landing
+            Documentaion
           </NavButton>
         </div>
       </div>

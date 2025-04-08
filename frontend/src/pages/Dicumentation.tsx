@@ -1,4 +1,4 @@
-export default function Dev() {
+export default function Documentation() {
   return (
     <div>
       <div className="mx-auto px-4 py-8">

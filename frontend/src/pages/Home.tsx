@@ -1,4 +1,5 @@
-import ZHelloWorld from "@/components/boxify/ZHelloWorld";
+import ZHelloWorld from "@/components/boxify/Wallet";
+import Game from "@/components/boxify/Game";
 import { BoxContainer, BoxProps } from "../components/boxify/BoxInterface";
 
 export default function Home() {
@@ -19,6 +20,15 @@ export default function Home() {
       theme: {
         dark: "bg-red-800",
         light: "bg-red-200",
+      },
+    },
+    {
+      id: "game-box",
+      label: "Game",
+      component: Game,
+      theme: {
+        dark: "bg-green-800",
+        light: "bg-green-200",
       },
     },
   ];

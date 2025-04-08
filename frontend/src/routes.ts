@@ -1,5 +1,5 @@
 import Home from './pages/Home';
-import Dev from './pages/Dev';
+import Documentation from './pages/Dicumentation';
 
 export interface RouteConfig {
   path: string;
@@ -22,12 +22,12 @@ export const routes: RouteConfig[] = [
   },
 
   {
-    path: '/dev',
-    component: Dev,
-    label: 'Development',
+    path: '/Documentation',
+    component: Documentation,
+    label: 'Documentation',
     icon: '⚒️',
     showInNav: true,
-    description: 'Tools and resources for blockchain developers'
+    description: 'What i Did'
   },
 ];
 
