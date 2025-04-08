@@ -1,4 +1,3 @@
-import { useWallet } from "../contexts/WalletContext";
 import ThemeToggle from "./ThemeToggle";
 import { Link, useLocation } from "react-router-dom";
 import { useMemo } from "react";
