@@ -14,6 +14,8 @@ https://testnets.opensea.io/collection/unidentified-contract-c4b7a0b5-1859-4449-
 after setting .env configure  (secret, infura (metamask.dev), etherscan)
 
 > bunx hardhat run scripts/deploy-erc1155.js --network sepolia
+( my address the msg.send for constructor -> mint = 0x34b68353F8753F7e019987168b1Eacf0F76AE5c9 )
+
 Compiled 1 Solidity file successfully (evm target: paris).
 Deploying HouseUrban ERC1155 token...
 HouseUrban deployed to: 0x8274a1859910C3454CC5a8804B80cfC83b5cacBd

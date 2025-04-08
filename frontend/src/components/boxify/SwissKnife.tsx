@@ -1,43 +1,90 @@
+import React, { useState } from 'react';
 import { ethers } from 'ethers';
+import HouseUrbanABI from './erc1155abi.json'; // Your contract ABI
 
-/*
-import { ethers } from 'ethers';
+const CONTRACT_ADDRESS = '0x8274a1859910C3454CC5a8804B80cfC83b5cacBd';
+const SEPOLIA_CHAIN_ID = '11155111';
 
-// Setup Provider and Signer
-const provider = new ethers.providers.Web3Provider(window.ethereum);
-await window.ethereum.request({ method: 'eth_requestAccounts' });
-const signer = provider.getSigner();
+function App() {
+  const [account, setAccount] = useState(null);
+  const [contract, setContract] = useState(null);
+  const [balance, setBalance] = useState('0');
 
-// ERC1155 Contract
-const erc1155Address = '0x5fbdb2315678afecb367f032d93f642f64180aa3'; // Update with your actual address
-const erc1155Abi = [/* ABI from your ERC1155 contract ];
+  // Connect to MetaMask
+  const connectWallet = async () => {
+    if (window.ethereum) {
+      try {
+        // Request account access
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        setAccount(accounts[0]);
 
-const erc1155Contract = new ethers.Contract(erc1155Address, erc1155Abi, signer);
+        // Switch to Sepolia
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: `0x${Number(SEPOLIA_CHAIN_ID).toString(16)}` }],
+        });
 
-// Forging Contract
-const forgingAddress = '0x...'; // Replace with your forging contract address
-const forgingAbi = [ ABI from your forging contract]
-const forgingContract = new ethers.Contract(forgingAddress, forgingAbi, signer);
+        // Set up provider and signer
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
 
+        // Create contract instance
+        const houseUrbanContract = new ethers.Contract(CONTRACT_ADDRESS, HouseUrbanABI, signer);
+        setContract(houseUrbanContract);
 
-Read-Only (with Provider):
-javascript
-const readOnlyContract = new ethers.Contract(erc1155Address, erc1155Abi, provider);
-const balance = await readOnlyContract.balanceOf(userAddress, 0); // Token ID 0 balance
-console.log(balance.toString());
+        console.log('Connected:', accounts[0]);
+      } catch (error) {
+        console.error('Connection failed:', error);
+      }
+    } else {
+      alert('Please install MetaMask!');
+    }
+  };
 
-State-Changing (with Signer):
-javascript
-const tx = await forgingContract.forge(3); // Forge token 3 by burning 0 and 1
-await tx.wait();
-console.log('Forged token 3!');
+  // Example: Check balance of a token ID (e.g., tokenId = 1)
+  const checkBalance = async () => {
+    if (contract && account) {
+      try {
+        const tokenId = 1; // Adjust based on your token IDs
+        const balance = await contract.balanceOf(account, tokenId);
+        setBalance(balance.toString());
+      } catch (error) {
+        console.error('Balance fetch failed:', error);
+      }
+    }
+  };
 
-*/
+  // Example: Mint a token (assuming your contract has a mint function)
+  const mintToken = async () => {
+    if (contract) {
+      try {
+        const tokenId = 1; // Adjust based on your token IDs
+        const amount = 1;  // Number of tokens to mint
+        const tx = await contract.mint(account, tokenId, amount, '0x'); // '0x' is empty data
+        await tx.wait();
+        console.log('Minted successfully!');
+        checkBalance(); // Update balance after minting
+      } catch (error) {
+        console.error('Minting failed:', error);
+      }
+    }
+  };
 
-const SwissKnife = () => {
-    return (<div>
-        you are at the right spot
-    </div>)
-};
+  return (
+    <div>
+      <h1>HouseUrban ERC-1155 DApp</h1>
+      {!account ? (
+        <button onClick={connectWallet}>Connect Wallet</button>
+      ) : (
+        <div>
+          <p>Connected: {account}</p>
+          <button onClick={checkBalance}>Check Balance</button>
+          <p>Balance of Token ID 1: {balance}</p>
+          <button onClick={mintToken}>Mint Token</button>
+        </div>
+      )}
+    </div>
+  );
+}
 
-export default SwissKnife;
+export default App;

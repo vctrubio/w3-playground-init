@@ -5,16 +5,6 @@ export interface Wallet {
     apiResponse: Record<string, any>;
     blockNumber?: number;
     blockHash?: string;
-    transactions?: Transaction[];
-}
-
-export interface Transaction {
-    hash: string;
-    from: string;
-    to: string;
-    value: string;
-    formattedValue: string;
-    timestamp?: string;
 }
 
 export interface BalanceInfo {
