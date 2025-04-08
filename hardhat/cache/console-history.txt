@@ -1,5 +1,0 @@
-helloWorld
-const HelloWorld = await ethers.getContractFactory("HelloWorld");
-contractAddress
-const contractAddress = "0x5fbdb2315678afecb367f032d93f642f64180aa3"; // Your contract address
-npx hardhat console --network localhost

@@ -1,8 +1,4 @@
-# First dive into web3 Dapp
+# Module 3 for Metana.io
 
-## a user should
-
-- connect wallet
-- view basic info...
-    -balance, network
-- interact with helloworld contract
+A ERC1155 contract that is interacted through react, this was only a test. A did in the pool.
+Please check more @ [titorrito](https://github.com/titorrito)
