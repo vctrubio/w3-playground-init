@@ -8,7 +8,7 @@ import { UserProvider } from "./contexts/UserContext";
 
 function App() {
   return (
-    <>
+    <UserProvider>
       <Router>
         <div className="min-h-screen flex flex-col dark:bg-gray-900 transition-colors">
           <Navbar />
@@ -27,7 +27,7 @@ function App() {
           <Footer />
         </div>
       </Router>
-    </>
+    </UserProvider>
   );
 }
 

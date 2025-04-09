@@ -4,7 +4,6 @@ import ContractEvent from "@/components/boxify/ContractEvent";
 import User from "@/components/boxify/User";
 import { BoxContainer, BoxProps } from "../components/boxify/BoxInterface";
 import { useState } from "react";
-import { UserProvider } from "@/contexts/UserContext";
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(true); //false for deployment...
@@ -64,17 +63,17 @@ export default function Home() {
   ];
 
   return (
-    <UserProvider>
+    <>
       <div className="dark:text-white p-4 mx-auto min-h-screen flex flex-col items-center justify-center">
         {!isLoggedIn ? (
           <button
             onClick={handleLogin}
             className="px-8 py-3 text-lg font-semibold rounded-lg 
-        bg-orange-500 dark:bg-blue-700 text-white
-        hover:bg-orange-800 dark:hover:bg-black
-        transform transition-all duration-300 
-        animate-bounce hover:animate-none
-        shadow-lg dark:shadow-blue-900/50"
+                      bg-orange-500 dark:bg-blue-700 text-white
+                      hover:bg-orange-800 dark:hover:bg-black
+                      transform transition-all duration-300 
+                      animate-bounce hover:animate-none
+                      shadow-lg dark:shadow-blue-900/50"
           >
             Sign In
           </button>
@@ -84,6 +83,6 @@ export default function Home() {
           </div>
         )}
       </div>
-    </UserProvider>
+    </>
   );
 }
