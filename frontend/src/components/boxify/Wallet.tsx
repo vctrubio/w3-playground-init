@@ -1,7 +1,6 @@
-import { UserProvider } from "@/contexts/UserContext";
 function WalletUi() {
     return (
-        <UserProvider>hellomap</UserProvider>
+        <div>hellomap</div>
     )
 }
 

@@ -4,61 +4,58 @@ interface GameItem {
   id: number;
   title: string;
   color: string;
+  msg: string;
 }
 
-// GameBox component to render each game item
-const GameBox = ({ item, isLastInOddGroup, isLast }: { item: GameItem; isLastInOddGroup?: boolean; isLast?: boolean }) => {
-  const showTitleAlways = item.id === 6 || isLast;
-  
+const GameBox = ({ item }: { item: GameItem }) => {
   return (
-    <div 
-      className={`p-4 m-2 rounded-xl shadow-md transition-transform hover:scale-105 flex-grow relative ${isLastInOddGroup ? 'w-full' : 'w-[30%]'}`}
-      style={{ 
+    <div
+      className="p-4 m-2 rounded-xl shadow-md transition-transform min-h-[150px] flex flex-col relative"
+      style={{
         borderWidth: '3px',
         borderStyle: 'solid',
         borderColor: item.color,
         backgroundColor: `${item.color}20`
       }}
     >
-      <p className="text-lg font-semibold">Item #{item.id}</p>
-      <h3 
-        className={`font-bold text-lg transition-opacity duration-300 ${showTitleAlways ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
-      >
+      <h3 className="font-bold text-lg mb-2">
         {item.title}
       </h3>
-      <div className="absolute inset-0 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity" style={{background: `${item.color}40`}}>
-        <h3 className="font-bold text-lg">{!showTitleAlways && item.title}</h3>
-      </div>
+      <div className="flex-grow"></div>
+      {item.msg && (
+        <div className="absolute inset-0 opacity-0 hover:opacity-100 flex flex-col items-center justify-center transition-opacity" style={{ background: `${item.color}70` }}>
+          <p className="text-center px-4 font-medium bg-red-600 w-full">{item.msg}</p>
+        </div>
+      )}
     </div>
   );
 };
 
 function Game() {
-  const [gameItems, setGameItems] = useState<GameItem[]>([
-    { id: 0, title: "Ruby Box", color: "#E0115F" },
-    { id: 1, title: "Sapphire Box", color: "#0F52BA" },
-    { id: 2, title: "Emerald Box", color: "#50C878" },
-    { id: 3, title: "Amber Box", color: "#FFBF00" },
-    { id: 4, title: "Amethyst Box", color: "#9966CC" },
-    { id: 5, title: "Diamond Box", color: "#B9F2FF" },
-    { id: 6, title: "Obsidian Box", color: "#3D3D3D" }
-  ]);
+  const gameItems: GameItem[] = [
+    { id: 0, title: "SEED", color: "#E0115F", msg: "Free mint" },
+    { id: 1, title: "WATER", color: "#0F52BA", msg: "Free mint" },
+    { id: 2, title: "SOIL", color: "#50C878", msg: "Free mint" },
+    { id: 3, title: "PLANT", color: "#FFBF00", msg: "Needs 0 and 1" },
+    { id: 4, title: "FRUIT", color: "#9966CC", msg: "Needs 1 and 2" },
+    { id: 5, title: "FLOWER", color: "#B9F2FF", msg: "Needs 0 and 2" },
+    { id: 6, title: "BASKET", color: "#3D3D3D", msg: "Needs 0, 1, and 2" }
+  ];
 
-  // Calculate if the last item should take up the full row
-  const totalItems = gameItems.length;
-  const isLastItemAlone = totalItems % 3 === 1;
+  // Check if the last item should take full width
+  const shouldLastItemSpanFull = gameItems.length % 3 === 1;
 
   return (
     <div className="p-4 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Game Boxes</h1>
-      <div className="flex flex-wrap justify-center border-b border-l border-r shadow-md group">
+      <h1 className="text-2xl font-bold mb-4">Game Play</h1>
+      <div className="grid grid-cols-3 gap-2 border-b border-l border-r shadow-md p-4">
         {gameItems.map((item, index) => (
-          <GameBox 
-            key={item.id} 
-            item={item} 
-            isLastInOddGroup={isLastItemAlone && index === totalItems - 1}
-            isLast={index === totalItems - 1}
-          />
+          <div
+            key={item.id}
+            className={`${shouldLastItemSpanFull && index === gameItems.length - 1 ? 'col-span-3' : ''}`}
+          >
+            <GameBox item={item} />
+          </div>
         ))}
       </div>
     </div>

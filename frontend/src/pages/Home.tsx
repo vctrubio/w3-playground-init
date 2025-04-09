@@ -1,10 +1,18 @@
-import ZHelloWorld from "@/components/boxify/Wallet";
 import Game from "@/components/boxify/Game";
+import ContractABI from "@/components/boxify/ContractABI";
+import ContractEvent from "@/components/boxify/ContractEvent";
+import User from "@/components/boxify/User";
 import { BoxContainer, BoxProps } from "../components/boxify/BoxInterface";
 import { useState } from "react";
+import { UserProvider } from "@/contexts/UserContext";
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(true); //false for deployment...
+
+  const handleLogin = () => {
+    console.log("User attempting to login");
+    setIsLoggedIn(true);
+  };
 
   /**
    * BoxModules Configuration:
@@ -17,12 +25,30 @@ export default function Home() {
    */
   const boxModules: BoxProps[] = [
     {
-      id: "hello-world-box",
-      label: "Hello World",
-      component: ZHelloWorld,
+      id: "user-box",
+      label: "User Profile",
+      component: User,
       theme: {
-        dark: "bg-red-800",
-        light: "bg-red-200",
+        dark: "bg-yellow-800",
+        light: "bg-yellow-200",
+      },
+    },
+    {
+      id: "contract-abi-box",
+      label: "Contract ABI",
+      component: ContractABI,
+      theme: {
+        dark: "bg-blue-800",
+        light: "bg-blue-200",
+      },
+    },
+    {
+      id: "contract-event-box",
+      label: "Contract Events",
+      component: ContractEvent,
+      theme: {
+        dark: "bg-purple-800",
+        light: "bg-purple-200",
       },
     },
     {
@@ -34,27 +60,30 @@ export default function Home() {
         light: "bg-green-200",
       },
     },
+
   ];
 
   return (
-    <div className="dark:text-white p-4 mx-auto min-h-screen flex flex-col items-center justify-center">
-      {!isLoggedIn ? (
-        <button
-          onClick={() => setIsLoggedIn(true)}
-          className="px-8 py-3 text-lg font-semibold rounded-lg 
-                    bg-orange-500 dark:bg-blue-700 text-white
-                    hover:bg-orange-800 dark:hover:bg-black
-                    transform transition-all duration-300 
-                    animate-bounce hover:animate-none
-                    shadow-lg dark:shadow-blue-900/50"
-        >
-          Sign In
-        </button>
-      ) : (
-        <div className="w-full animate-fadeIn">
-          <BoxContainer modules={boxModules} />
-        </div>
-      )}
-    </div>
+    <UserProvider>
+      <div className="dark:text-white p-4 mx-auto min-h-screen flex flex-col items-center justify-center">
+        {!isLoggedIn ? (
+          <button
+            onClick={handleLogin}
+            className="px-8 py-3 text-lg font-semibold rounded-lg 
+        bg-orange-500 dark:bg-blue-700 text-white
+        hover:bg-orange-800 dark:hover:bg-black
+        transform transition-all duration-300 
+        animate-bounce hover:animate-none
+        shadow-lg dark:shadow-blue-900/50"
+          >
+            Sign In
+          </button>
+        ) : (
+          <div className="w-full animate-fadeIn">
+            <BoxContainer modules={boxModules} />
+          </div>
+        )}
+      </div>
+    </UserProvider>
   );
 }
