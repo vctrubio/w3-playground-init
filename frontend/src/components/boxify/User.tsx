@@ -1,13 +1,13 @@
 import { useUser } from "@/contexts/UserContext";
 
 function User() {
-  const { user } = useUser();
+  const { user,contract } = useUser();
 
   const userData = {
     account: user?.address,
     balance: user?.network.balance,
     network: user?.network.name,
-    contractAddress: user?.contract?.address,
+    contractAddress: contract?.address,
   };
 
   return (
