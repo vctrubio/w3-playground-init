@@ -2,11 +2,12 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import { User, Contract } from '@/lib/types';
 import { getWallet } from '@/lib/rpc-json';
 import { ethers } from 'ethers';
-
+import { contractGame } from './ContractGame';
 interface UserContextType {
     user: User | null;
     setUser: React.Dispatch<React.SetStateAction<User | null>>;
     login: () => void;
+    loginWithGameContract: () => void;
     contract: Contract | null;
     setContract: React.Dispatch<React.SetStateAction<Contract | null>>;
     updateContract: (contract?: Contract) => void;
@@ -67,7 +68,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, [user]);
 
     function updateContract(contract?: Contract) {
-        
+        if (!user || !user.address) {
+            console.log("Contract reverted... no user found...");
+            return;
+        }
+
         if (!contract || !contract.address || !contract.abi) {
             console.log("Invalid contract data");
             return;
@@ -75,8 +80,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         try {
             console.log(`Updating contract for user ${user.address}...`);
-            console.log("Contract data:", contract);
-
             const ethersContract = new ethers.Contract(
                 contract.address,
                 contract.abi,
@@ -104,9 +107,22 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             user,
             setUser,
             login: () => getWallet().then(setUser),
+            loginWithGameContract: async () => {
+                const newUser = await getWallet();
+                setUser(newUser);
+
+                if (newUser && newUser.address) {
+                    updateContract({
+                        address: contractGame.address,
+                        abi: contractGame.abi,
+                        chainId: contractGame.networkId,
+                    });
+                    console.log("User logged in with game contract");
+                } else {
+                    console.log("Failed to get user wallet for contract login");
+                }
+            },
             contract,
-            setContract,
-            updateContract,
         }}>
             {children}
         </UserContext.Provider>

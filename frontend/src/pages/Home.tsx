@@ -7,14 +7,13 @@ import { BoxContainer, BoxProps } from "../components/boxify/BoxInterface";
 import { getIsWeb3 } from "@/lib/rpc-json";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { useUser } from "@/contexts/UserContext";
-import { contractGame } from "@/contexts/ContractGame";
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const { showNotification } = useNotifications();
-  const { login, updateContract } = useUser();
+  const { loginWithGameContract } = useUser();
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     console.log("User attempting to login");
 
     if (!getIsWeb3()) {
@@ -23,12 +22,7 @@ export default function Home() {
     }
 
     try {
-      login();
-      updateContract({
-        address: contractGame.address,
-        abi: contractGame.abi,
-        chainId: parseInt(contractGame.networkId),
-      });
+      await loginWithGameContract();
     } catch (error) {
       showNotification("Login failed. Please try again.", "error");
       return;
@@ -38,9 +32,9 @@ export default function Home() {
     // showNotification("Successfully connected to wallet", "success");
   };
 
-  useEffect(() => {
-    handleLogin();
-  }, []);
+  // useEffect(() => {
+  //   handleLogin();
+  // }, []);
 
   /**
    * BoxModules Configuration:
