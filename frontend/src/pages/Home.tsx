@@ -4,7 +4,7 @@ import { BoxContainer, BoxProps } from "../components/boxify/BoxInterface";
 import { useState } from "react";
 
 export default function Home() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(true); //false for deployment...
 
   /**
    * BoxModules Configuration:

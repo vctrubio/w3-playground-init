@@ -3,6 +3,8 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { routes } from "./routes";
 import NotFound from "./components/NotFound";
+import { UserProvider } from "./contexts/UserContext";
+
 
 function App() {
   return (
