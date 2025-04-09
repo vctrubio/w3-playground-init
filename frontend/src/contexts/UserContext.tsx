@@ -67,11 +67,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, [user]);
 
     function updateContract(contract?: Contract) {
-        if (!user || !user.address) {
-            console.log("Contract reverted... no user found...");
-            return;
-        }
-
+        
         if (!contract || !contract.address || !contract.abi) {
             console.log("Invalid contract data");
             return;
