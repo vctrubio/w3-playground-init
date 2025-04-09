@@ -99,8 +99,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     }
 
-    // window.uu = user;
-    // window.cc = contract;
+    window.uu = user;
+    window.cc = contract;
     // window.nn = user?.network;
 
     return (

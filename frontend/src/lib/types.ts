@@ -15,10 +15,10 @@ export type User = {
 };
 
 export type Contract = {
-  address: string | null;
-  chainId: number | null;
-  abi: ethers.InterfaceAbi | null;
-  instance: ethers.Contract | null;
+  address: string;
+  abi: ethers.InterfaceAbi;
+  chainId?: number;
+  instance?: ethers.Contract | null;
 };
 
 export type NotificationType = "error" | "warning" | "success" | "info";

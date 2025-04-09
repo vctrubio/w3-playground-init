@@ -1,15 +1,18 @@
+import { useState, useEffect } from "react";
 import Game from "@/components/boxify/Game";
 import ContractABI from "@/components/boxify/ContractABI";
 import ContractEvent from "@/components/boxify/ContractEvent";
 import User from "@/components/boxify/User";
 import { BoxContainer, BoxProps } from "../components/boxify/BoxInterface";
-import { useState } from "react";
 import { getIsWeb3 } from "@/lib/rpc-json";
 import { useNotifications } from "@/contexts/NotificationContext";
+import { useUser } from "@/contexts/UserContext";
+import { contractGame } from "@/contexts/ContractGame";
 
 export default function Home() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false); //false for deployment...
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const { showNotification } = useNotifications();
+  const { login, updateContract } = useUser();
 
   const handleLogin = () => {
     console.log("User attempting to login");
@@ -18,10 +21,26 @@ export default function Home() {
       showNotification("No Web3 provider found. Please install MetaMask.", "error");
       return;
     }
-    
+
+    try {
+      login();
+      updateContract({
+        address: contractGame.address,
+        abi: contractGame.abi,
+        chainId: parseInt(contractGame.networkId),
+      });
+    } catch (error) {
+      showNotification("Login failed. Please try again.", "error");
+      return;
+    }
+
     setIsLoggedIn(true);
-    showNotification("Successfully connected to wallet", "success");
+    // showNotification("Successfully connected to wallet", "success");
   };
+
+  useEffect(() => {
+    handleLogin();
+  }, []);
 
   /**
    * BoxModules Configuration:
@@ -34,7 +53,7 @@ export default function Home() {
    */
   const boxModules: BoxProps[] = [
     {
-      id: "user-box",
+      id: "user",
       label: "User Profile",
       component: User,
       theme: {
@@ -43,7 +62,7 @@ export default function Home() {
       },
     },
     {
-      id: "contract-abi-box",
+      id: "contract",
       label: "Contract ABI",
       component: ContractABI,
       theme: {
@@ -52,7 +71,7 @@ export default function Home() {
       },
     },
     {
-      id: "contract-event-box",
+      id: "event",
       label: "Contract Events",
       component: ContractEvent,
       theme: {
@@ -61,7 +80,7 @@ export default function Home() {
       },
     },
     {
-      id: "game-box",
+      id: "game",
       label: "Game",
       component: Game,
       theme: {
@@ -69,7 +88,6 @@ export default function Home() {
         light: "bg-green-200",
       },
     },
-
   ];
 
   return (
