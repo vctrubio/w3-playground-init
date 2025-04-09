@@ -4,13 +4,23 @@ import ContractEvent from "@/components/boxify/ContractEvent";
 import User from "@/components/boxify/User";
 import { BoxContainer, BoxProps } from "../components/boxify/BoxInterface";
 import { useState } from "react";
+import { getIsWeb3 } from "@/lib/rpc-json";
+import { useNotifications } from "@/contexts/NotificationContext";
 
 export default function Home() {
-  const [isLoggedIn, setIsLoggedIn] = useState(true); //false for deployment...
+  const [isLoggedIn, setIsLoggedIn] = useState(false); //false for deployment...
+  const { showNotification } = useNotifications();
 
   const handleLogin = () => {
     console.log("User attempting to login");
+
+    if (!getIsWeb3()) {
+      showNotification("No Web3 provider found. Please install MetaMask.", "error");
+      return;
+    }
+    
     setIsLoggedIn(true);
+    showNotification("Successfully connected to wallet", "success");
   };
 
   /**

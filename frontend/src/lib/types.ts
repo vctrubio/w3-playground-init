@@ -20,3 +20,20 @@ export type Contract = {
   abi: ethers.InterfaceAbi | null;
   instance: ethers.Contract | null;
 };
+
+export type NotificationType = "error" | "warning" | "success" | "info";
+
+export interface Notification {
+  id?: string;
+  message: string;
+  type: NotificationType;
+  duration?: number;
+}
+
+export interface ApiResponse {
+  success: boolean;
+  message: string;
+  code?: number;
+  type?: NotificationType;
+  data?: any;
+}
