@@ -1,31 +1,59 @@
 import ThemeToggle from "./ThemeToggle";
 import { Link, useLocation } from "react-router-dom";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Logo from "./Logo";
+import { useUser } from "@/contexts/UserContext";
 
-const NavButton = ({
-  onClick,
-  color = "blue",
-  children,
-}: {
-  onClick: () => void;
-  color?: "blue" | "red" | "orange" | "purple";
-  children: React.ReactNode;
-}) => {
-  const colorClasses = {
-    blue: "bg-blue-600 hover:bg-blue-700",
-    red: "bg-red-600 hover:bg-red-700",
-    orange: "bg-orange-800 hover:bg-orange-500",
-    purple: "bg-purple-600 hover:bg-purple-700",
+const NavButton = () => {
+  const { user } = useUser();
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const handleNetworkClick = (networkId: number) => {
+    console.log(`Selected network ID: ${networkId}`);
+    setShowDropdown(false);
+  };
+
+  const handleClick = () => {
+    if (user) {
+      setShowDropdown(!showDropdown);
+    } else {
+      // Navigate to documentation if no user
+      window.location.href = "/documentation";
+    }
   };
 
   return (
-    <button
-      onClick={onClick}
-      className={`${colorClasses[color]} text-white py-2 px-4 rounded-full transition text-sm`}
-    >
-      {children}
-    </button>
+    <div className="relative">
+      <button
+        onClick={handleClick}
+        className="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-full transition text-sm flex items-center"
+      >
+        {user ? (
+          <>
+            Chain: {user.network.id}
+          </>
+        ) : (
+          "Documentation"
+        )}
+      </button>
+
+      {showDropdown && user && (
+        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 py-1">
+          <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 border-b dark:border-gray-700">
+            Select Network
+          </div>
+          {[1, 2, 3].map((id) => (
+            <div
+              key={id}
+              className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+              onClick={() => handleNetworkClick(id)}
+            >
+              Network {id}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -111,7 +139,6 @@ const Breadcrumbs = () => {
 };
 
 export default function Navbar() {
-
   return (
     <nav className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow p-4 transition-colors">
       <div className="container mx-auto flex justify-between items-center">
@@ -122,13 +149,7 @@ export default function Navbar() {
 
         <div className="flex items-center space-x-4">
           <ThemeToggle />
-
-          <NavButton
-            onClick={() => (window.location.href = "/documentation")}
-            color="purple"
-          >
-            Documentaion
-          </NavButton>
+          <NavButton />
         </div>
       </div>
     </nav>
