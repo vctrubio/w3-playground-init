@@ -106,6 +106,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         <UserContext.Provider value={{
             user,
             setUser,
+            contract,
             login: () => getWallet().then(setUser),
             loginWithGameContract: async () => {
                 const newUser = await getWallet();
@@ -122,7 +123,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     console.log("Failed to get user wallet for contract login");
                 }
             },
-            contract,
         }}>
             {children}
         </UserContext.Provider>

@@ -3,7 +3,8 @@ import { Contract } from '@/lib/types';
 import { parseAndCategorizeAbi, SolItem, SolParam, SolItemType, formatContractResponse } from '@/lib/rpc-abi';
 import { OpenSeaIcon, EtherscanIcon, WarningIcon } from '@/lib/svgs';
 import { useUser } from '@/contexts/UserContext';
-
+import { ethers } from 'ethers';
+import { contractMain } from '@/contexts/ContractGame';
 interface ContractState {
   [functionName: string]: {
     functionSol: SolItem;
@@ -24,20 +25,21 @@ const FunctionSignature: React.FC<{
 }> = ({ functionSol, color, args, loading, onInputChange, onKeyDown }) => {
   return (
     <div className="font-mono text-sm">
-      <span className="text-purple-600 dark:text-purple-400">{functionSol.stateMutability} </span>
-      <span className={`text-${color}-600 dark:text-${color}-400`}>{functionSol.type} </span>
-      <span className="text-white dark:text-white font-semibold">{functionSol.name}</span>
-      <span className="text-gray-600 dark:text-gray-400">(</span>
+      <span className="text-cyan-700 dark:text-purple-400">{functionSol.stateMutability} </span>
+      <span className={`text-${color}-700 dark:text-${color}-400`}>{functionSol.type} </span>
+      <span className="text-gray-900 text-orange-500 dark:text-white font-semibold">{functionSol.name}</span>
+      <span className="text-gray-500 dark:text-gray-400">(</span>
       {functionSol.inputs.map((input, inputIndex) => {
         const paramKey = input.name || `param${inputIndex}`;
         return (
           <span key={inputIndex} className="inline-flex items-center">
-            <span className="text-blue-600 dark:text-blue-400">{input.type}</span>
+            <span className="text-blue-700 dark:text-blue-400">{input.type}</span>
             {onInputChange ? (
               <input
                 type="text"
                 placeholder={input.name || `arg${inputIndex}`}
-                className="max-w-[120px] mx-1 px-2 py-0.5 bg-gray-800 text-white rounded border border-gray-700 
+                className="max-w-[120px] mx-1 px-2 py-0.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-white 
+                          rounded border border-gray-300 dark:border-gray-700 
                           font-mono text-xs focus:border-blue-500 focus:outline-none disabled:opacity-50"
                 value={(args && args[paramKey]) || ''}
                 onChange={(e) => onInputChange(paramKey, e.target.value)}
@@ -45,30 +47,30 @@ const FunctionSignature: React.FC<{
                 disabled={loading}
               />
             ) : (
-              <span className="text-amber-500 dark:text-amber-300"> {input.name}</span>
+              <span className="text-amber-600 dark:text-amber-300"> {input.name}</span>
             )}
-            {inputIndex < functionSol.inputs.length - 1 && <span className="text-gray-600 dark:text-gray-400">, </span>}
+            {inputIndex < functionSol.inputs.length - 1 && <span className="text-gray-500 dark:text-gray-400">, </span>}
           </span>
         );
       })}
-      <span className="text-gray-600 dark:text-gray-400">)</span>
+      <span className="text-gray-500 dark:text-gray-400">)</span>
 
       {functionSol.type === 'function' && functionSol.outputs && functionSol.outputs.length > 0 && (
         <>
-          <span className="text-gray-600 dark:text-gray-400"> → </span>
+          <span className="text-gray-500 dark:text-gray-400"> → </span>
           {functionSol.outputs.length === 1 ? (
-            <span className="text-blue-600 dark:text-blue-400">{functionSol.outputs[0].type}</span>
+            <span className="text-blue-700 dark:text-blue-400">{functionSol.outputs[0].type}</span>
           ) : (
             <>
-              <span className="text-gray-600 dark:text-gray-400">[</span>
+              <span className="text-gray-500 dark:text-gray-400">[</span>
               {functionSol.outputs.map((output, outputIndex) => (
                 <span key={outputIndex}>
-                  <span className="text-blue-600 dark:text-blue-400">{output.type}</span>
-                  {output.name && <span className="text-amber-500 dark:text-amber-300"> {output.name}</span>}
-                  {outputIndex < functionSol.outputs.length - 1 && <span className="text-gray-600 dark:text-gray-400">, </span>}
+                  <span className="text-blue-700 dark:text-blue-400">{output.type}</span>
+                  {output.name && <span className="text-amber-600 dark:text-amber-300"> {output.name}</span>}
+                  {outputIndex < functionSol.outputs.length - 1 && <span className="text-gray-500 dark:text-gray-400">, </span>}
                 </span>
               ))}
-              <span className="text-gray-600 dark:text-gray-400">]</span>
+              <span className="text-gray-500 dark:text-gray-400">]</span>
             </>
           )}
         </>
@@ -89,9 +91,9 @@ const ContractFunction: React.FC<{
   const getTypeStyles = () => {
     switch (solItem.itemType) {
       case SolItemType.READ:
-        return 'bg-blue-900/20 dark:bg-blue-900/30 hover:bg-blue-900/30 dark:hover:bg-blue-900/40 border-l-4 border-blue-700';
+        return 'bg-blue-100/80 dark:bg-blue-900/30 hover:bg-blue-200/80 dark:hover:bg-blue-900/40 border-l-4 border-blue-500 dark:border-blue-700';
       case SolItemType.WRITE:
-        return 'bg-green-900/20 dark:bg-green-900/30 hover:bg-green-900/30 dark:hover:bg-green-900/40 border-l-4 border-green-700';
+        return 'bg-green-100/80 dark:bg-green-900/30 hover:bg-green-200/80 dark:hover:bg-green-900/40 border-l-4 border-green-500 dark:border-green-700';
       default:
         return 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700';
     }
@@ -100,11 +102,11 @@ const ContractFunction: React.FC<{
   const getColor = () => {
     switch (solItem.itemType) {
       case SolItemType.READ:
-        return 'yellow';
+        return 'sky';
       case SolItemType.WRITE:
         return 'green';
       default:
-        return 'gray';
+        return 'grey';
     }
   };
 
@@ -133,7 +135,6 @@ const ContractFunction: React.FC<{
   const handleExecute = () => {
     if (!setContractState || funcState.loading) return;
 
-    // For functions with inputs, check if all required args are provided
     if (solItem.inputs.length > 0) {
       const currentArgs = funcState.args || {};
       const missingArgs = solItem.inputs.filter((input, idx) => {
@@ -204,9 +205,8 @@ const ContractFunction: React.FC<{
           )}
         </div>
 
-        {/* Result display */}
         {funcState.response && (
-          <div className="mt-2 bg-gray-800 dark:bg-gray-900 p-2 rounded text-sm text-gray-300 font-mono">
+          <div className="mt-2 bg-white/70 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-2 rounded text-sm text-gray-800 dark:text-gray-300 font-mono">
             <pre className="whitespace-pre-wrap overflow-x-auto">{funcState.response.replace('Result: ', '')}</pre>
           </div>
         )}
@@ -217,6 +217,16 @@ const ContractFunction: React.FC<{
 
 const ContractABI = () => {
   const { contract } = useUser();
+  const { user } = useUser();
+
+  const contractParent = new ethers.Contract(
+    contractMain.address,
+    contractMain.abi,
+    user?.signer,
+  );
+
+  window.te = contractParent;
+
   const [contractState, setContractState] = useState<ContractState>(() => {
     if (!contract || !contract.abi) return {};
 
@@ -325,18 +335,18 @@ const ContractABI = () => {
   window.state = contractState;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-gray-50 dark:bg-gray-900 rounded-lg shadow-lg text-gray-800 dark:text-gray-200">
+    <div className="max-w-4xl mx-auto p-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg text-gray-800 dark:text-gray-200">
       <ContractHeader contract={contract} />
 
-      <div className="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+      <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
         <div className="font-mono text-sm">
-          <span className="text-blue-600 dark:text-blue-400">contract</span>
-          <span className="text-purple-600 dark:text-purple-400"> {contract.name || "Contract"} </span>
-          <span className="text-gray-600 dark:text-gray-400">{"{"}</span>
+          <span className="text-blue-700 dark:text-blue-400">contract</span>
+          <span className="text-purple-700 dark:text-purple-400"> {contract.name || "Contract"} </span>
+          <span className="text-gray-500 dark:text-gray-400">{"{"}</span>
         </div>
 
         <div className="pl-4 mt-2">
-          <ContractSection title="Read Functions" titleColor="text-blue-600 dark:text-blue-400" isEmpty={reads.length === 0}>
+          <ContractSection title="Read Functions" titleColor="text-blue-700 dark:text-blue-400" isEmpty={reads.length === 0}>
             <ul>
               {reads.map((solItem, idx) => (
                 <ContractFunction
@@ -349,7 +359,7 @@ const ContractABI = () => {
             </ul>
           </ContractSection>
 
-          <ContractSection title="Write Functions" titleColor="text-green-600 dark:text-green-400" isEmpty={writes.length === 0}>
+          <ContractSection title="Write Functions" titleColor="text-green-700 dark:text-green-400" isEmpty={writes.length === 0}>
             <ul>
               {writes.map((solItem, idx) => (
                 <ContractFunction
@@ -364,7 +374,7 @@ const ContractABI = () => {
         </div>
 
         <div className="font-mono text-sm">
-          <span className="text-gray-600 dark:text-gray-400">{"}"}</span>
+          <span className="text-gray-500 dark:text-gray-400">{"}"}</span>
         </div>
       </div>
     </div>
@@ -372,14 +382,14 @@ const ContractABI = () => {
 };
 
 const ContractHeader: React.FC<{ contract: Contract }> = ({ contract }) => (
-  <div className="mb-6 border-b border-gray-300 dark:border-gray-700 pb-4">
+  <div className="mb-6 border-b border-[#dce0e8] dark:border-gray-700 pb-4">
     {contract.address && (
       <div className="flex space-x-4 mt-2">
         <a
           href={`https://testnets.opensea.io/assets/sepolia/${contract.address}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors font-medium flex items-center"
+          className="text-[#8839ef] hover:text-[#7287fd] dark:text-blue-400 dark:hover:text-blue-300 transition-colors font-medium flex items-center"
         >
           <OpenSeaIcon />
           View on OpenSea
@@ -388,7 +398,7 @@ const ContractHeader: React.FC<{ contract: Contract }> = ({ contract }) => (
           href={`https://sepolia.etherscan.io/address/${contract.address}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors font-medium flex items-center"
+          className="text-[#8839ef] hover:text-[#7287fd] dark:text-blue-400 dark:hover:text-blue-300 transition-colors font-medium flex items-center"
         >
           <EtherscanIcon />
           View on Etherscan
@@ -406,7 +416,7 @@ const ContractSection: React.FC<{
 }> = ({ title, titleColor, children, isEmpty }) => (
   <div className="mb-4">
     {isEmpty ? (
-      <p className="text-gray-500 dark:text-gray-400 italic pl-4">// No {title.toLowerCase()} found.</p>
+      <p className="text-gray-600 dark:text-gray-400 italic pl-4">// No {title.toLowerCase()} found.</p>
     ) : children}
   </div>
 );
