@@ -8,7 +8,7 @@ interface UserContextType {
     setUser: React.Dispatch<React.SetStateAction<User | null>>;
     login: () => void;
     loginWithGameContract: () => void;
-    contract: Contract | null;
+    contract: Contract;
     setContract: React.Dispatch<React.SetStateAction<Contract | null>>;
     updateContract: (contract?: Contract) => void;
 }

@@ -18,7 +18,7 @@ export type Contract = {
   address: string;
   abi: ethers.InterfaceAbi;
   chainId?: number;
-  instance?: ethers.Contract | null;
+  instance?: ethers.Contract;
 };
 
 export type NotificationType = "error" | "warning" | "success" | "info";

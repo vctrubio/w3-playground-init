@@ -215,17 +215,7 @@ const ContractFunction: React.FC<{
   );
 };
 
-const ContractABI = () => {
-  const { contract } = useUser();
-  const { user } = useUser();
-
-  const contractParent = new ethers.Contract(
-    contractMain.address,
-    contractMain.abi,
-    user?.signer,
-  );
-
-  window.te = contractParent;
+const ContractABI = ({ contract, name }: { contract: Contract, name?: string }) => {
 
   const [contractState, setContractState] = useState<ContractState>(() => {
     if (!contract || !contract.abi) return {};
@@ -332,21 +322,19 @@ const ContractABI = () => {
     }
   };
 
-  window.state = contractState;
-
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg text-gray-800 dark:text-gray-200">
+    <div className="max-w-4xl mx-auto py-2 bg-white dark:bg-gray-900 rounded-lg shadow-lg text-gray-800 dark:text-gray-200">
       <ContractHeader contract={contract} />
 
       <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
         <div className="font-mono text-sm">
           <span className="text-blue-700 dark:text-blue-400">contract</span>
-          <span className="text-purple-700 dark:text-purple-400"> {contract.name || "Contract"} </span>
+          <span className="text-purple-700 dark:text-purple-400"> {name || contract.name || "Contract"} </span>
           <span className="text-gray-500 dark:text-gray-400">{"{"}</span>
         </div>
 
         <div className="pl-4 mt-2">
-          <ContractSection title="Read Functions" titleColor="text-blue-700 dark:text-blue-400" isEmpty={reads.length === 0}>
+          <ContractSection title="Read Functions" isEmpty={reads.length === 0}>
             <ul>
               {reads.map((solItem, idx) => (
                 <ContractFunction
@@ -359,7 +347,7 @@ const ContractABI = () => {
             </ul>
           </ContractSection>
 
-          <ContractSection title="Write Functions" titleColor="text-green-700 dark:text-green-400" isEmpty={writes.length === 0}>
+          <ContractSection title="Write Functions" isEmpty={writes.length === 0}>
             <ul>
               {writes.map((solItem, idx) => (
                 <ContractFunction
@@ -381,11 +369,53 @@ const ContractABI = () => {
   );
 };
 
-const ContractHeader: React.FC<{ contract: Contract }> = ({ contract }) => (
+function ContractPage() {
+  const { contract, user } = useUser();
+
+  //I want to display the origin 1155 Contract.
+  const contractInstance = new ethers.Contract(
+    contractMain.address,
+    contractMain.abi,
+    user?.signer,
+  );
+
+  const contractParent: Contract = {
+    address: contractMain.address,
+    abi: contractMain.abi,
+    chainId: Number(contractMain.chainId),
+    instance: contractInstance,
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen w-full bg-gray-100 dark:bg-gray-900">
+      <div className="w-full max-w-4xl px-4">
+        <ContractABI contract={contract} name="GamePlay" />
+        <ContractABI contract={contractParent} name="ERC115" />
+      </div>
+    </div>
+  );
+}
+
+const NoAbiProvided: React.FC = () => (
+  <div className="max-w-4xl mx-auto p-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg text-gray-800 dark:text-gray-200">
+    <div className="flex flex-col items-center justify-center py-8">
+      <WarningIcon className="h-16 w-16 text-red-600 dark:text-red-400 mb-4" />
+      <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">No ABI Provided</h2>
+      <p className="text-gray-600 dark:text-gray-400 text-center">
+        Contract ABI is required to display functions.
+        <br />
+        Please provide a valid ABI to interact with the contract.
+      </p>
+    </div>
+  </div>
+);
+
+
+const ContractHeader: React.FC<{ contract: Contract, name?: string }> = ({ contract, name }) => (
   <div className="mb-6 border-b border-[#dce0e8] dark:border-gray-700 pb-4">
     {contract.address && (
       <div className="flex space-x-4 mt-2">
-        <a
+        {/* <a
           href={`https://testnets.opensea.io/assets/sepolia/${contract.address}`}
           target="_blank"
           rel="noopener noreferrer"
@@ -393,7 +423,7 @@ const ContractHeader: React.FC<{ contract: Contract }> = ({ contract }) => (
         >
           <OpenSeaIcon />
           View on OpenSea
-        </a>
+        </a> */}
         <a
           href={`https://sepolia.etherscan.io/address/${contract.address}`}
           target="_blank"
@@ -410,10 +440,9 @@ const ContractHeader: React.FC<{ contract: Contract }> = ({ contract }) => (
 
 const ContractSection: React.FC<{
   title: string;
-  titleColor: string;
   children: React.ReactNode;
   isEmpty: boolean;
-}> = ({ title, titleColor, children, isEmpty }) => (
+}> = ({ title, children, isEmpty }) => (
   <div className="mb-4">
     {isEmpty ? (
       <p className="text-gray-600 dark:text-gray-400 italic pl-4">// No {title.toLowerCase()} found.</p>
@@ -421,18 +450,4 @@ const ContractSection: React.FC<{
   </div>
 );
 
-const NoAbiProvided: React.FC = () => (
-  <div className="max-w-4xl mx-auto p-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg text-gray-800 dark:text-gray-200">
-    <div className="flex flex-col items-center justify-center py-8">
-      <WarningIcon className="h-16 w-16 text-red-600 dark:text-red-400 mb-4" />
-      <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">No ABI Provided</h2>
-      <p className="text-gray-600 dark:text-gray-400 text-center">
-        Contract ABI is required to display functions.
-        <br />
-        Please provide a valid ABI to interact with the contract.
-      </p>
-    </div>
-  </div>
-);
-
-export default ContractABI;
+export default ContractPage;

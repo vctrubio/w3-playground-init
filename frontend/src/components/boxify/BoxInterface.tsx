@@ -39,7 +39,9 @@ export function Box({
           : 'opacity-0 max-h-0 overflow-hidden'
           }`}
       >
-        <Component {...componentProps} />
+        <div className="pt-4 pr-2 overflow-y-auto max-h-[900px]">
+          <Component {...componentProps} />
+        </div>
       </div>
     </div>
   );
@@ -47,7 +49,7 @@ export function Box({
 
 export function BoxContainer({ modules }: { modules: BoxProps[] }): JSX.Element {
   return (
-    <div >
+    <div className=''>
       {modules.map((module) => (
         <Box key={module.id} {...module} />
       ))}

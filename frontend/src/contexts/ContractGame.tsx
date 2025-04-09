@@ -15,8 +15,8 @@ export const contractGame = {
 }
 
 export const contractMain = {
-    name: "Erik",
-    address: "0xc6C927e94b3f28c6C905941e9Fb023eD44C14c06",
+    name: "Erik1155",
+    address: "0xF9a1cCcC8Cc96E146290Bd234018899d8Ce3Cc74",
     network: "sepolia",
     chainId: 11155111,
     abi: [
@@ -33,6 +33,7 @@ export const contractMain = {
         "event TransferSingle(address indexed,address indexed,address indexed,uint256,uint256)",
         "event URI(string,uint256 indexed)",
         "function BASKET() view returns (uint256)",
+        "function COOLDOWN() view returns (uint256)",
         "function FLOWER() view returns (uint256)",
         "function FRUIT() view returns (uint256)",
         "function PLANT() view returns (uint256)",
@@ -41,14 +42,17 @@ export const contractMain = {
         "function WATER() view returns (uint256)",
         "function balanceOf(address,uint256) view returns (uint256)",
         "function balanceOfBatch(address[],uint256[]) view returns (uint256[])",
-        "function burn(address,uint256,uint256)",
-        "function getAllBalanceOf(address) view returns (uint256[])",
+        "function burn(uint256)",
+        "function forge(uint256)",
+        "function getAllTokens() view returns (uint256[7])",
         "function isApprovedForAll(address,address) view returns (bool)",
-        "function mint(address,uint256,uint256)",
+        "function lastMintTime(address) view returns (uint256)",
+        "function mint(uint256)",
         "function safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)",
         "function safeTransferFrom(address,address,uint256,uint256,bytes)",
         "function setApprovalForAll(address,bool)",
         "function supportsInterface(bytes4) view returns (bool)",
+        "function timeUntilNextMint(address) view returns (uint256)",
         "function uri(uint256) view returns (string)"
     ],
 }
