@@ -3,14 +3,13 @@ import { User, Contract } from '@/lib/types';
 import { getWallet } from '@/lib/rpc-json';
 import { ethers } from 'ethers';
 import { contractGame } from './ContractGame';
+import { contractMain } from './ContractGame';
+
 interface UserContextType {
     user: User | null;
-    setUser: React.Dispatch<React.SetStateAction<User | null>>;
-    login: () => void;
     loginWithGameContract: () => void;
-    contract: Contract;
-    setContract: React.Dispatch<React.SetStateAction<Contract | null>>;
-    updateContract: (contract?: Contract) => void;
+    contract: Contract | null;
+    parentContract: Contract | null;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -19,6 +18,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [user, setUser] = useState<User | null>(null);
     const [isInitializing, setIsInitializing] = useState(true);
     const [contract, setContract] = useState<Contract | null>(null);
+    const [parentContract, setParentContract] = useState<Contract | null>(null);
 
     // Initialize user on mount
     useEffect(() => {
@@ -67,7 +67,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     }, [user]);
 
-    function updateContract(contract?: Contract) {
+    function updateContract(contract?: Contract, isParentContract: boolean = false) {
         if (!user || !user.address) {
             console.log("Contract reverted... no user found...");
             return;
@@ -79,46 +79,60 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         try {
-            console.log(`Updating contract for user ${user.address}...`);
+            console.log(`Updating ${isParentContract ? 'parent' : 'child'} contract for user ${user.address}...`);
             const ethersContract = new ethers.Contract(
                 contract.address,
                 contract.abi,
                 user.signer
             );
 
-            setContract({
+            const contractData = {
                 address: contract.address,
                 chainId: contract.chainId,
                 abi: contract.abi,
                 instance: ethersContract,
-            });
+            };
+
+            if (isParentContract) {
+                setParentContract(contractData);
+            } else {
+                setContract(contractData);
+            }
 
         } catch (e) {
-            console.error("Error updating contract:", e);
+            console.error(`Error updating ${isParentContract ? 'parent' : 'child'} contract:`, e);
         }
     }
 
     window.uu = user;
     window.cc = contract;
-    // window.nn = user?.network;
+    window.pc = parentContract;
 
     return (
         <UserContext.Provider value={{
             user,
-            setUser,
             contract,
-            login: () => getWallet().then(setUser),
+            parentContract,
             loginWithGameContract: async () => {
                 const newUser = await getWallet();
                 setUser(newUser);
 
                 if (newUser && newUser.address) {
+                    // Initialize the game contract (child)
                     updateContract({
                         address: contractGame.address,
                         abi: contractGame.abi,
-                        chainId: contractGame.networkId,
-                    });
-                    console.log("User logged in with game contract");
+                        chainId: contractGame.chainId,
+                    }, false);
+
+                    // Initialize the main contract (parent)
+                    updateContract({
+                        address: contractMain.address,
+                        abi: contractMain.abi,
+                        chainId: contractMain.chainId,
+                    }, true);
+
+                    console.log("User logged in with game and parent contracts");
                 } else {
                     console.log("Failed to get user wallet for contract login");
                 }

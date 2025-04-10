@@ -22,7 +22,8 @@ const FunctionSignature: React.FC<{
   loading?: boolean;
   onInputChange?: (paramName: string, value: string) => void;
   onKeyDown?: (e: React.KeyboardEvent, paramName: string) => void;
-}> = ({ functionSol, color, args, loading, onInputChange, onKeyDown }) => {
+  userAddress?: string;
+}> = ({ functionSol, color, args, loading, onInputChange, onKeyDown, userAddress }) => {
   return (
     <div className="font-mono text-sm">
       <span className="text-cyan-700 dark:text-purple-400">{functionSol.stateMutability} </span>
@@ -31,21 +32,36 @@ const FunctionSignature: React.FC<{
       <span className="text-gray-500 dark:text-gray-400">(</span>
       {functionSol.inputs.map((input, inputIndex) => {
         const paramKey = input.name || `param${inputIndex}`;
+        const isAddressType = input.type.toLowerCase() === 'address';
         return (
           <span key={inputIndex} className="inline-flex items-center">
             <span className="text-blue-700 dark:text-blue-400">{input.type}</span>
             {onInputChange ? (
-              <input
-                type="text"
-                placeholder={input.name || `arg${inputIndex}`}
-                className="max-w-[120px] mx-1 px-2 py-0.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-white 
+              <div className="inline-flex items-center">
+                <input
+                  type="text"
+                  placeholder={input.name || `arg${inputIndex}`}
+                  className="max-w-[120px] mx-1 px-2 py-0.5 bg-white dark:bg-gray-800 text-gray-800 dark:text-white 
                           rounded border border-gray-300 dark:border-gray-700 
                           font-mono text-xs focus:border-blue-500 focus:outline-none disabled:opacity-50"
-                value={(args && args[paramKey]) || ''}
-                onChange={(e) => onInputChange(paramKey, e.target.value)}
-                onKeyDown={(e) => onKeyDown && onKeyDown(e, paramKey)}
-                disabled={loading}
-              />
+                  value={(args && args[paramKey]) || ''}
+                  onChange={(e) => onInputChange(paramKey, e.target.value)}
+                  onKeyDown={(e) => onKeyDown && onKeyDown(e, paramKey)}
+                  disabled={loading}
+                />
+                {isAddressType && userAddress && (
+                  <button
+                    onClick={() => onInputChange(paramKey, userAddress)}
+                    className="ml-1 p-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 text-xs"
+                    disabled={loading}
+                    title="Use my address"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             ) : (
               <span className="text-amber-600 dark:text-amber-300"> {input.name}</span>
             )}
@@ -83,7 +99,8 @@ const ContractFunction: React.FC<{
   functionName: string;
   contractState: ContractState;
   setContractState?: React.Dispatch<React.SetStateAction<ContractState>>;
-}> = ({ functionName, contractState, setContractState }) => {
+  userAddress?: string | null;
+}> = ({ functionName, contractState, setContractState, userAddress }) => {
   const funcState = contractState[functionName];
   const solItem = funcState.functionSol;
   const isFunction = solItem.type === 'function';
@@ -179,6 +196,7 @@ const ContractFunction: React.FC<{
             loading={funcState.loading}
             onInputChange={setContractState ? handleInputChange : undefined}
             onKeyDown={setContractState ? handleKeyDown : undefined}
+            userAddress={userAddress}
           />
 
           {isFunction && setContractState && (
@@ -215,7 +233,7 @@ const ContractFunction: React.FC<{
   );
 };
 
-const ContractABI = ({ contract, name }: { contract: Contract, name?: string }) => {
+const ContractABI = ({ contract, name, userAddress }: { contract: Contract | null, name?: string, userAddress?: string | null }) => {
 
   const [contractState, setContractState] = useState<ContractState>(() => {
     if (!contract || !contract.abi) return {};
@@ -342,6 +360,7 @@ const ContractABI = ({ contract, name }: { contract: Contract, name?: string }) 
                   functionName={solItem.name}
                   contractState={contractState}
                   setContractState={setContractState}
+                  userAddress={userAddress}
                 />
               ))}
             </ul>
@@ -355,6 +374,7 @@ const ContractABI = ({ contract, name }: { contract: Contract, name?: string }) 
                   functionName={solItem.name}
                   contractState={contractState}
                   setContractState={setContractState}
+                  userAddress={userAddress}
                 />
               ))}
             </ul>
@@ -370,27 +390,15 @@ const ContractABI = ({ contract, name }: { contract: Contract, name?: string }) 
 };
 
 function ContractPage() {
-  const { contract, user } = useUser();
+  const { contract, user, parentContract } = useUser();
 
-  //I want to display the origin 1155 Contract.
-  const contractInstance = new ethers.Contract(
-    contractMain.address,
-    contractMain.abi,
-    user?.signer,
-  );
-
-  const contractParent: Contract = {
-    address: contractMain.address,
-    abi: contractMain.abi,
-    chainId: Number(contractMain.chainId),
-    instance: contractInstance,
-  };
+  const userAddress = user?.address || null;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen w-full bg-gray-100 dark:bg-gray-900">
       <div className="w-full max-w-4xl px-4">
-        <ContractABI contract={contract} name="GamePlay" />
-        <ContractABI contract={contractParent} name="ERC115" />
+        <ContractABI contract={contract} name="GamePlay" userAddress={userAddress} />
+        <ContractABI contract={parentContract} name="ERC1155" userAddress={userAddress} />
       </div>
     </div>
   );

@@ -39,7 +39,7 @@ export function Box({
           : 'opacity-0 max-h-0 overflow-hidden'
           }`}
       >
-        <div className="pt-4 pr-2 overflow-y-auto max-h-[900px]">
+        <div className="mt-6 overflow-y-auto max-h-[1000px]">
           <Component {...componentProps} />
         </div>
       </div>
