@@ -1,4 +1,4 @@
-const INFURA_PROJECT_ID = "d8813f365adb4e3fa6365a111eed3589"; // process.env.NEXT_PUBLIC_INFURA_PROJECT_ID;
+const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 import { ApiResponse } from "./types";
 export interface NetworkChain {
   id: string;

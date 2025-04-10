@@ -16,7 +16,7 @@ function User() {
     account: user.address,
     balance: user.network.balance,
     network: user.network.name,
-    contractAddress: contract?.address,
+    // contractAddress: contract?.address,
   };
 
   return (
