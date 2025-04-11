@@ -213,7 +213,6 @@ const ContractFunction: React.FC<{
                 {funcState.loading ? (
                   <div className="flex items-center">
                     <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></span>
-                    <span>...</span>
                   </div>
                 ) : (
                   <span>{solItem.itemType === SolItemType.READ ? 'Read' : 'Write'}</span>

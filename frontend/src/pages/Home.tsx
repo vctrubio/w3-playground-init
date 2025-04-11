@@ -55,15 +55,6 @@ export default function Home() {
     //     light: "bg-yellow-200",
     //   },
     // },
-    // {
-    //   id: "contract",
-    //   label: "Contract ABI",
-    //   component: ContractABI,
-    //   theme: {
-    //     dark: "bg-blue-800",
-    //     light: "bg-blue-200",
-    //   },
-    // },
     {
       id: "event",
       label: "Contract Events",
@@ -82,18 +73,27 @@ export default function Home() {
         light: "bg-green-200",
       },
     },
+    {
+      id: "contract",
+      label: "Contract ABI",
+      component: ContractABI,
+      theme: {
+        dark: "bg-blue-800",
+        light: "bg-blue-200",
+      },
+    },
   ];
-
+  
   return (
     <>
       <div className="dark:text-white p-4 mx-auto min-h-screen flex flex-col items-center justify-center">
         {!isLoggedIn ? (
           <button
-            onClick={handleLogin}
-            className="px-8 py-3 text-lg font-semibold rounded-lg 
-                      bg-orange-500 dark:bg-blue-700 text-white
-                      hover:bg-orange-800 dark:hover:bg-black
-                      transform transition-all duration-300 
+          onClick={handleLogin}
+          className="px-8 py-3 text-lg font-semibold rounded-lg 
+          bg-orange-500 dark:bg-blue-700 text-white
+          hover:bg-orange-800 dark:hover:bg-black
+          transform transition-all duration-300 
                       animate-bounce hover:animate-none
                       shadow-lg dark:shadow-blue-900/50"
           >
