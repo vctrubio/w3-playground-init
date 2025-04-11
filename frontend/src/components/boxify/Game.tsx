@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { executeContract } from '@/lib/rpc-contract';
-import { useNotifications } from '@/contexts/NotificationContext';
 
 interface GameItem {
   id: number;
@@ -10,16 +9,16 @@ interface GameItem {
   msg: string;
 }
 
-const GameBox = ({ 
-  item, 
-  onMint, 
-  onBurn, 
+const GameBox = ({
+  item,
+  onMint,
+  onBurn,
   canBurn,
   loading
-}: { 
-  item: GameItem; 
-  onMint: (item: GameItem) => void; 
-  onBurn: (item: GameItem) => void; 
+}: {
+  item: GameItem;
+  onMint: (item: GameItem) => void;
+  onBurn: (item: GameItem) => void;
   canBurn: boolean;
   loading: boolean;
 }) => {
@@ -33,36 +32,33 @@ const GameBox = ({
         background: `linear-gradient(135deg, ${item.color}15, ${item.color}30)`
       }}
     >
-      {/* Card Header */}
-      <div 
+      <div
         className="py-3 px-4 font-bold text-lg"
-        style={{ 
+        style={{
           borderBottom: `1px solid ${item.color}40`,
           background: `${item.color}25`
         }}
       >
         <div className="flex items-center">
-          <div 
-            className="w-3 h-3 rounded-full mr-2" 
+          <div
+            className="w-3 h-3 rounded-full mr-2"
             style={{ backgroundColor: item.color }}
           ></div>
           {item.title}
         </div>
       </div>
-      
-      {/* Card Content */}
+
       <div className="p-4">
         <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
           {item.msg}
         </p>
-        
-        {/* Card Actions */}
+
         <div className="flex gap-2 mt-2">
           <button
             onClick={() => onMint(item)}
             disabled={loading}
             className="flex-1 py-2 px-4 rounded-lg font-medium text-white transition-all relative overflow-hidden group"
-            style={{ 
+            style={{
               backgroundColor: `${item.color}`,
               boxShadow: `0 2px 10px ${item.color}50`
             }}
@@ -76,24 +72,24 @@ const GameBox = ({
               <span>Mint</span>
             )}
           </button>
-          
+
           {canBurn && (
             <button
               onClick={() => onBurn(item)}
               disabled={loading}
               className="flex-1 py-2 px-4 rounded-lg font-medium transition-all relative overflow-hidden group"
-              style={{ 
+              style={{
                 color: item.color,
                 border: `1px solid ${item.color}`,
                 backgroundColor: 'transparent'
               }}
             >
               <div className="absolute inset-0 w-full h-full transition-all duration-300 ease-out opacity-0 group-hover:opacity-10"
-                   style={{ backgroundColor: item.color }}></div>
+                style={{ backgroundColor: item.color }}></div>
               {loading ? (
                 <div className="flex justify-center items-center">
                   <div className="w-5 h-5 border-2 rounded-full animate-spin"
-                       style={{ borderColor: `${item.color}`, borderTopColor: 'transparent' }}></div>
+                    style={{ borderColor: `${item.color}`, borderTopColor: 'transparent' }}></div>
                 </div>
               ) : (
                 <span>Burn</span>
@@ -108,7 +104,6 @@ const GameBox = ({
 
 function Game() {
   const { contract } = useUser();
-  const { showNotification } = useNotifications();
   const [loading, setLoading] = useState<Record<string, boolean>>({});
 
   const gameItems: GameItem[] = [
@@ -121,132 +116,78 @@ function Game() {
     { id: 6, title: "BASKET", color: "#483D6F", msg: "Needs SEED, WATER, and SOIL" }
   ];
 
-  // Test notification function
-  const testNotification = () => {
-    console.log("Testing notification system...");
-    showNotification("Test notification - info", "info", 3000);
-    setTimeout(() => {
-      showNotification("Test notification - success", "success", 3000);
-    }, 1000);
-  };
-
-  // Determine if an item can be burned (IDs 3-7)
+  // In the assignment
   const canBurnItem = (id: number) => id >= 3 && id <= 7;
 
-  // Handle minting an item
   const handleMint = async (item: GameItem) => {
     if (!contract) {
-      showNotification('Please connect your wallet first', 'warning');
+      console.log('No contract available. Please connect wallet first.');
       return;
     }
-    
+
     const actionKey = `mint-${item.id}`;
-    setLoading({...loading, [actionKey]: true});
-    
+    setLoading({ ...loading, [actionKey]: true });
+
     try {
-      showNotification(`Starting to mint ${item.title}...`, 'info', 2000);
+      console.log(`Starting to mint ${item.title}...`);
       console.log(`Executing "mint" on contract with arg:`, item.id);
-      
+
       const result = await executeContract({
         contract,
         functionName: 'mint',
         functionArgs: [item.id]
       });
-      
+
       console.log(`Mint result for ${item.title} (ID: ${item.id}):`, result);
-      
+
       // Check if the result has a hash, indicating transaction was sent
       if (result && result.hash) {
-        showNotification(
-          `Successfully minted ${item.title}! Transaction: ${result.hash.substring(0, 6)}...${result.hash.substring(62)}`, 
-          'success',
-          5000
-        );
+        console.log(`Successfully minted ${item.title}! Transaction: ${result.hash}`);
       } else {
-        showNotification(`${item.title} minted successfully!`, 'success');
+        console.log(`${item.title} minted successfully!`);
       }
     } catch (error) {
       console.error(`Error minting ${item.title} (ID: ${item.id}):`, error);
-      
-      // Extract a more user-friendly error message
-      let errorMessage = `Failed to mint ${item.title}`;
-      if (error.message) {
-        // Check for common error patterns and provide better messages
-        if (error.message.includes('insufficient funds')) {
-          errorMessage = `Insufficient funds to mint ${item.title}`;
-        } else if (error.message.includes('user rejected')) {
-          errorMessage = `Transaction rejected`;
-        } else if (error.message.length < 100) {
-          // Only use short error messages directly
-          errorMessage = error.message;
-        }
-      }
-      
-      showNotification(errorMessage, 'error', 5000);
     } finally {
-      setLoading({...loading, [actionKey]: false});
+      setLoading({ ...loading, [actionKey]: false });
     }
   };
 
-  // Handle burning an item
   const handleBurn = async (item: GameItem) => {
     if (!contract) {
-      showNotification('Please connect your wallet first', 'warning');
+      console.log('No contract available. Please connect wallet first.');
       return;
     }
-    
+
     if (!canBurnItem(item.id)) {
-      showNotification(`${item.title} cannot be burned`, 'warning');
+      console.log(`${item.title} cannot be burned`);
       return;
     }
-    
+
     const actionKey = `burn-${item.id}`;
-    setLoading({...loading, [actionKey]: true});
-    
+    setLoading({ ...loading, [actionKey]: true });
+
     try {
-      showNotification(`Starting to burn ${item.title}...`, 'info', 2000);
+      console.log(`Starting to burn ${item.title}...`);
       console.log(`Executing "burn" on contract with arg:`, item.id);
-      
+
       const result = await executeContract({
         contract,
         functionName: 'burn',
         functionArgs: [item.id]
       });
-      
+
       console.log(`Burn result for ${item.title} (ID: ${item.id}):`, result);
-      
-      // Check if the result has a hash, indicating transaction was sent
+
       if (result && result.hash) {
-        showNotification(
-          `Successfully burned ${item.title}! Transaction: ${result.hash.substring(0, 6)}...${result.hash.substring(62)}`, 
-          'success',
-          5000
-        );
+        console.log(`Successfully burned ${item.title}! Transaction: ${result.hash}`);
       } else {
-        showNotification(`${item.title} burned successfully!`, 'success');
+        console.log(`${item.title} burned successfully!`);
       }
     } catch (error) {
       console.error(`Error burning ${item.title} (ID: ${item.id}):`, error);
-      
-      // Extract a more user-friendly error message
-      let errorMessage = `Failed to burn ${item.title}`;
-      if (error.message) {
-        // Check for common error patterns and provide better messages
-        if (error.message.includes('insufficient funds')) {
-          errorMessage = `Insufficient funds for gas to burn ${item.title}`;
-        } else if (error.message.includes('user rejected')) {
-          errorMessage = `Transaction rejected`;
-        } else if (error.message.includes('not own')) {
-          errorMessage = `You don't own any ${item.title} to burn`;
-        } else if (error.message.length < 100) {
-          // Only use short error messages directly
-          errorMessage = error.message;
-        }
-      }
-      
-      showNotification(errorMessage, 'error', 5000);
     } finally {
-      setLoading({...loading, [actionKey]: false});
+      setLoading({ ...loading, [actionKey]: false });
     }
   };
 
@@ -254,23 +195,18 @@ function Game() {
   const shouldLastItemSpanFull = gameItems.length % 3 === 1;
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Game Play</h1>
-      {/* Uncomment below to test notifications */}
-      <button 
-        onClick={testNotification} 
-        className="mb-4 px-4 py-2 bg-blue-500 text-white rounded">
-        Test Notifications
-      </button>
+    <div className="p-6 max-w-5xl mx-auto border-b border-r border-l">
+      <h1 className="text-xl font-bold mb-6 ">Collect all the collectables</h1>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {gameItems.map((item) => (
           <div
             key={item.id}
             className={`${shouldLastItemSpanFull && item.id === gameItems.length - 1 ? 'md:col-span-2 lg:col-span-3' : ''}`}
           >
-            <GameBox 
-              item={item} 
-              onMint={handleMint} 
+            <GameBox
+              item={item}
+              onMint={handleMint}
               onBurn={handleBurn}
               canBurn={canBurnItem(item.id)}
               loading={loading[`mint-${item.id}`] || loading[`burn-${item.id}`] || false}
