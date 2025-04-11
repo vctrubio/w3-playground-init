@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Contract } from '@/lib/types';
-import { parseAndCategorizeAbi, SolItem, SolParam, SolItemType, formatContractResponse } from '@/lib/rpc-abi';
-import { OpenSeaIcon, EtherscanIcon, WarningIcon } from '@/lib/svgs';
+import { parseAndCategorizeAbi, SolItem, SolItemType, formatContractResponse } from '@/lib/rpc-abi';
+import { EtherscanIcon, WarningIcon } from '@/lib/svgs';
 import { useUser } from '@/contexts/UserContext';
-import { ethers } from 'ethers';
-import { contractMain } from '@/contexts/ContractGame';
 interface ContractState {
   [functionName: string]: {
     functionSol: SolItem;
@@ -271,9 +269,9 @@ const ContractABI = ({ contract, name, userAddress }: { contract: Contract | nul
   const runExecute = async (triggeredContract: [string, ContractState[string]]) => {
     const [functionName, funcState] = triggeredContract;
 
-    console.log('Executing function:', functionName);
-    console.log('Function type:', funcState.functionSol.itemType);
-    console.log('Arguments:', funcState.args);
+    // console.log('Executing function:', functionName);
+    // console.log('Function type:', funcState.functionSol.itemType);
+    // console.log('Arguments:', funcState.args);
 
     try {
       const args = funcState.functionSol.inputs.map((input, idx) => {

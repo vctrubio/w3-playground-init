@@ -8,9 +8,15 @@ interface GameItem {
 }
 
 const GameBox = ({ item }: { item: GameItem }) => {
+
+  function handleClick() {
+    console.log('clickable', item.id)
+  }
+
   return (
     <div
       className="p-4 m-2 rounded-xl shadow-md transition-transform min-h-[150px] flex flex-col relative"
+      onClick={handleClick}
       style={{
         borderWidth: '3px',
         borderStyle: 'solid',
@@ -24,7 +30,7 @@ const GameBox = ({ item }: { item: GameItem }) => {
       <div className="flex-grow"></div>
       {item.msg && (
         <div className="absolute inset-0 opacity-0 hover:opacity-100 flex flex-col items-center justify-center transition-opacity" style={{ background: `${item.color}70` }}>
-          <p className="text-center px-4 font-medium bg-red-600 w-full">{item.msg}</p>
+          <p className="text-center px-4 font-medium w-full">{item.msg}</p>
         </div>
       )}
     </div>
@@ -56,6 +62,7 @@ function Game() {
           >
             <GameBox item={item} />
           </div>
+
         ))}
       </div>
     </div>

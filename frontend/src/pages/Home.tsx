@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Game from "@/components/boxify/Game";
 import ContractABI from "@/components/boxify/ContractABI";
 import ContractEvent from "@/components/boxify/ContractEvent";
+import ContractOnListener from "@/components/boxify/ContractOnListener";
 import User from "@/components/boxify/User";
 import { BoxContainer, BoxProps } from "../components/boxify/BoxInterface";
 import { getIsWeb3 } from "@/lib/rpc-json";
@@ -65,6 +66,15 @@ export default function Home() {
       },
     },
     {
+      id: "eventListener",
+      label: "Contract Listener",
+      component: ContractOnListener,
+      theme: {
+        dark: "bg-indigo-800",
+        light: "bg-indigo-200",
+      },
+    },
+    {
       id: "game",
       label: "Game",
       component: Game,
@@ -83,14 +93,14 @@ export default function Home() {
       },
     },
   ];
-  
+
   return (
     <>
       <div className="dark:text-white p-4 mx-auto min-h-screen flex flex-col items-center justify-center">
         {!isLoggedIn ? (
           <button
-          onClick={handleLogin}
-          className="px-8 py-3 text-lg font-semibold rounded-lg 
+            onClick={handleLogin}
+            className="px-8 py-3 text-lg font-semibold rounded-lg 
           bg-orange-500 dark:bg-blue-700 text-white
           hover:bg-orange-800 dark:hover:bg-black
           transform transition-all duration-300 
