@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useUser } from '@/contexts/UserContext';
+import { executeContract } from '@/lib/rpc-contract';
 
 interface GameItem {
   id: number;
@@ -8,9 +10,28 @@ interface GameItem {
 }
 
 const GameBox = ({ item }: { item: GameItem }) => {
+  const { contract } = useUser();
 
-  function handleClick() {
-    console.log('clickable', item.id)
+  async function handleClick() {
+    console.log('Clicking game item:', item.id, item.title);
+    
+    if (!contract) {
+      console.log('No contract available. Please connect wallet first.');
+      return;
+    }
+    
+    try {
+      console.log(`Executing "Mint" on contract with arg:`, item.id);
+      const result = await executeContract({
+        contract,
+        functionName: 'mint',
+        functionArgs: [item.id]
+      });
+      
+      console.log(`Mint result for ${item.title} (ID: ${item.id}):`, result);
+    } catch (error) {
+      console.error(`Error minting ${item.title} (ID: ${item.id}):`, error);
+    }
   }
 
   return (
