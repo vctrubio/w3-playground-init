@@ -136,9 +136,9 @@ export function ContractEventComponent() {
         const parsedMintLogs = mintLogs.map((log) => {
           const parsedLog = contract.instance?.interface.parseLog(log);
           return {
-            address: parsedLog.args[0],
-            tokenId: Number(parsedLog.args[1]),
-            amount: Number(parsedLog.args[2]),
+            address: parsedLog?.args[0],
+            tokenId: Number(parsedLog?.args[1]),
+            amount: Number(parsedLog?.args[2]),
             type: 'mint',
           } as RawEvent;
         });
@@ -146,9 +146,9 @@ export function ContractEventComponent() {
         const parsedBurnLogs = burnLogs.map((log) => {
           const parsedLog = contract.instance?.interface.parseLog(log);
           return {
-            address: parsedLog.args[0],
-            tokenId: Number(parsedLog.args[1]),
-            amount: Number(parsedLog.args[2]),
+            address: parsedLog?.args[0],
+            tokenId: Number(parsedLog?.args[1]),
+            amount: Number(parsedLog?.args[2]),
             type: 'burn',
           } as RawEvent;
         });
@@ -157,9 +157,9 @@ export function ContractEventComponent() {
         const processedEvents = getEventResult(allRawEvents);
         setEvents(processedEvents);
         
-        // Organize events by tokenId
         const eventsByToken = getEventsByTokenId(processedEvents);
         setTokenEvents(eventsByToken);
+
       } catch (err) {
         setError('Failed to fetch events');
         console.error(err);
@@ -181,7 +181,6 @@ export function ContractEventComponent() {
 
   return (
     <div>
-      <h1>Contract Events</h1>
       {/* <h2>Events by Address</h2>
       <pre>{JSON.stringify(events, null, 2)}</pre>
        */}
