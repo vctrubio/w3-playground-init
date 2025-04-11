@@ -46,24 +46,24 @@ export default function Home() {
    *   - light: CSS class for light mode
    */
   const boxModules: BoxProps[] = [
-    {
-      id: "user",
-      label: "User Profile",
-      component: User,
-      theme: {
-        dark: "bg-yellow-800",
-        light: "bg-yellow-200",
-      },
-    },
-    {
-      id: "contract",
-      label: "Contract ABI",
-      component: ContractABI,
-      theme: {
-        dark: "bg-blue-800",
-        light: "bg-blue-200",
-      },
-    },
+    // {
+    //   id: "user",
+    //   label: "User Profile",
+    //   component: User,
+    //   theme: {
+    //     dark: "bg-yellow-800",
+    //     light: "bg-yellow-200",
+    //   },
+    // },
+    // {
+    //   id: "contract",
+    //   label: "Contract ABI",
+    //   component: ContractABI,
+    //   theme: {
+    //     dark: "bg-blue-800",
+    //     light: "bg-blue-200",
+    //   },
+    // },
     {
       id: "event",
       label: "Contract Events",

@@ -1,132 +1,92 @@
 import { ethers } from 'ethers';
-import { Contract } from './types';
-import { parseAndCategorizeAbi, SolItemType } from './rpc-abi';
+import { useUser } from '@/contexts/UserContext';
 
-export interface ContractEvent {
-  name: string;
-  blockNumber: number;
-  transactionHash: string;
-  logIndex: number;
-  timestamp: number;
-  args: Record<string, any>;
-  raw?: any;
+async function getLogs(filter: ethers.Filter): Promise<ethers.Log[]> {
+  const { user } = useUser();
+
+  if (!user) {
+    throw new Error('No user found');
+  }
+
+  const logs = await user.provider.getLogs(filter);
+  return logs;
 }
 
-export function listenToContractEvents(
-  contract: Contract, 
-  onEventReceived: (event: ContractEvent) => void
-): () => void {
-  if (!contract.instance || !contract.abi) {
-    console.error('Cannot listen to events: Contract instance or ABI not available');
-    return () => {};
+export async function initGetContractEvents() {
+  const { parentContract } = useUser();
+
+  if (!parentContract?.address) {
+    throw new Error('No parent contract found');
   }
 
-  const { events } = parseAndCategorizeAbi(contract.abi);
-  if (events.length === 0) {
-    console.log('No events found in contract ABI');
-    return () => {};
-  }
-
-  console.log(`Setting up listeners for ${events.length} events:`, events.map(e => e.name));
-
-  // Set up listeners for each event
-  const cleanupFunctions = events.map(eventDef => {
-    try {
-      return contract.instance!.on(eventDef.name, (...args) => {
-        // The last argument is the event object
-        const eventObj = args[args.length - 1];
-        
-        // Get the arguments (without the event object)
-        const eventArgs = args.slice(0, -1);
-        
-        // Create named arguments mapping
-        const namedArgs: Record<string, any> = {};
-        
-        // Map positional args to named args if we have names
-        eventDef.inputs.forEach((input, index) => {
-          if (index < eventArgs.length) {
-            namedArgs[input.name || `arg${index}`] = eventArgs[index];
-          }
-        });
-
-        // For named args in the event object
-        if (eventObj.args) {
-          Object.entries(eventObj.args).forEach(([key, value]) => {
-            if (isNaN(Number(key))) { // Skip numeric keys
-              namedArgs[key] = value;
-            }
-          });
-        }
-        
-        const contractEvent: ContractEvent = {
-          name: eventDef.name,
-          blockNumber: eventObj.blockNumber,
-          transactionHash: eventObj.transactionHash,
-          logIndex: eventObj.logIndex,
-          timestamp: Date.now(), // We'll use current time as the event time
-          args: namedArgs,
-          raw: eventObj
-        };
-        
-        console.log('Event received:', contractEvent);
-        onEventReceived(contractEvent);
-      });
-    } catch (error) {
-      console.error(`Error setting up listener for event ${eventDef.name}:`, error);
-      return () => {};
-    }
-  });
-
-  // Return a cleanup function that removes all listeners
-  return () => {
-    console.log('Cleaning up event listeners');
-    contract.instance!.removeAllListeners();
+  const filterMint: ethers.Filter = {
+    address: parentContract.address,
+    fromBlock: 0,
+    toBlock: 'latest',
+    topics: [
+      ethers.id('Mint(address,uint256,uint256)')
+    ]
   };
+
+  const eventMints = await getLogs(filterMint)
+  console.log('eventMints', eventMints);
+
+  return eventMints;
 }
 
-export async function getHistoricalEvents(
-  contract: Contract,
-  eventName: string, 
-  fromBlock: number = 0
-): Promise<ContractEvent[]> {
-  if (!contract.instance || !contract.abi) {
-    console.error('Cannot get events: Contract instance or ABI not available');
-    return [];
-  }
+
+/*
+{
+  topics: [
+    keccak256("Mint(address,uint256,uint256)"), // topic[0]: event signature
+    "0xUserAddress",                            // topic[1]: indexed `to`
+  ],
+  data: ABI.encode([1, 10])                    // non-indexed `id` and `amount`
   
-  try {
-    const filter = contract.instance.filters[eventName]();
-    const events = await contract.instance.queryFilter(filter, fromBlock);
-    
-    return events.map(event => {
-      // Find the event definition in the ABI
-      const { events: abiEvents } = parseAndCategorizeAbi(contract.abi!);
-      const eventDef = abiEvents.find(e => e.name === eventName);
-      
-      // Create named arguments
-      const namedArgs: Record<string, any> = {};
-      
-      if (eventDef && event.args) {
-        eventDef.inputs.forEach((input, index) => {
-          if (event.args && index < event.args.length) {
-            namedArgs[input.name || `arg${index}`] = event.args[index];
-          }
-        });
+
+  // const mintEvents = events.find((e) => e.name === 'Mint');
+  // const burnEvents = events.find((e) => e.name === 'Burn');
+
+  
+"mintEvents": {
+    "type": "event",
+    "name": "Mint",
+    "inputs": [
+      {
+        "name": "address",
+        "type": "indexed"
+      },
+      {
+        "name": "arg1",
+        "type": "uint256"
+      },
+      {
+        "name": "arg2",
+        "type": "uint256"
       }
-      
-      return {
-        name: eventName,
-        blockNumber: event.blockNumber,
-        transactionHash: event.transactionHash,
-        logIndex: event.logIndex,
-        timestamp: Date.now(), // We don't have the actual timestamp easily available
-        args: event.args ? {...namedArgs, ...event.args} : namedArgs,
-        raw: event
-      };
-    });
-    
-  } catch (error) {
-    console.error(`Error getting historical events for ${eventName}:`, error);
-    return [];
+    ],
+    "itemType": "event"
+  },
+  "burnEvents": {
+    "type": "event",
+    "name": "Burn",
+    "inputs": [
+      {
+        "name": "address",
+        "type": "indexed"
+      },
+      {
+        "name": "arg1",
+        "type": "uint256"
+      },
+      {
+        "name": "arg2",
+        "type": "uint256"
+      }
+    ],
+    "itemType": "event"
   }
+
 }
+
+*/

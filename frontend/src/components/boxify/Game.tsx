@@ -36,10 +36,10 @@ function Game() {
     { id: 0, title: "SEED", color: "#E0115F", msg: "Free mint" },
     { id: 1, title: "WATER", color: "#0F52BA", msg: "Free mint" },
     { id: 2, title: "SOIL", color: "#50C878", msg: "Free mint" },
-    { id: 3, title: "PLANT", color: "#FFBF00", msg: "Needs 0 and 1" },
-    { id: 4, title: "FRUIT", color: "#9966CC", msg: "Needs 1 and 2" },
-    { id: 5, title: "FLOWER", color: "#B9F2FF", msg: "Needs 0 and 2" },
-    { id: 6, title: "BASKET", color: "#3D3D3D", msg: "Needs 0, 1, and 2" }
+    { id: 3, title: "PLANT", color: "#8531BA", msg: "Needs SEED and WATER" },
+    { id: 4, title: "FRUIT", color: "#307DA1", msg: "Needs WATER and SOIL" },
+    { id: 5, title: "FLOWER", color: "#986C8E", msg: "Needs SEED and SOIL" },
+    { id: 6, title: "BASKET", color: "#483D6F", msg: "Needs SEED, WATER, and SOIL" }
   ];
 
   // Check if the last item should take full width
