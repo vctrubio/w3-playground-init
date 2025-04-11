@@ -39,6 +39,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         initializeUser();
     }, []);
 
+    // needs websocketProvider, so new 
     // Event Listening for onChanged
     useEffect(() => {
         if (typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
@@ -79,7 +80,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         try {
-            console.log(`Updating ${isParentContract ? 'parent' : 'child'} contract for user ${user.address}...`);
             const ethersContract = new ethers.Contract(
                 contract.address,
                 contract.abi,
@@ -87,9 +87,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             );
 
             const contractData = {
-                address: contract.address,
-                chainId: contract.chainId,
-                abi: contract.abi,
+                ...contract,
                 instance: ethersContract,
             };
 

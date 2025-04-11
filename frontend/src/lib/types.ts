@@ -12,6 +12,7 @@ export type User = {
   network: Network;
   signer: ethers.JsonRpcSigner;
   provider: ethers.BrowserProvider;
+  //needed to add WebSocketProvider, init in UserContext and use it in eventlistener.
 };
 
 export type Contract = {
