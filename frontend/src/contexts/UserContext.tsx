@@ -7,6 +7,7 @@ import { contractMain } from './ContractGame';
 import { INFURA_PROJECT_ID } from '@/lib/rpc-network';
 interface UserContextType {
     user: User | null;
+    isInitializing: boolean;
     loginWithGameContract: () => void;
     contract: Contract | null;
     parentContract: Contract | null;
@@ -21,6 +22,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [contract, setContract] = useState<Contract | null>(null);
     const [parentContract, setParentContract] = useState<Contract | null>(null);
     const [socketContract, setSocketContract] = useState<Contract | null>(null);
+
     // Initialize user on mount
     useEffect(() => {
         const initializeUser = async () => {
@@ -67,15 +69,15 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     }, [user]);
 
-    function updateContract(contract?: Contract, isParentContract: boolean = false) {
+    function updateContract(contract: Contract): Contract | null {
         if (!user || !user.address) {
             console.log("Contract reverted... no user found...");
-            return;
+            return null;
         }
 
         if (!contract || !contract.address || !contract.abi) {
             console.log("Invalid contract data");
-            return;
+            return null;
         }
 
         try {
@@ -85,19 +87,13 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 user.signer
             );
 
-            const contractData = {
+            return {
                 ...contract,
                 instance: ethersContract,
             };
-
-            if (isParentContract) {
-                setParentContract(contractData);
-            } else {
-                setContract(contractData);
-            }
-
         } catch (e) {
-            console.error(`Error updating ${isParentContract ? 'parent' : 'child'} contract:`, e);
+            console.error(`Error updating contract:`, e);
+            return null;
         }
     }
 
@@ -107,6 +103,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return;
         }
 
+        //this should not be, becasue contract is required, but double checking doesnt hurt right?
         if (!contract || !contract.address || !contract.abi) {
             console.log("Socket reverted... no contract found...");
             return; // Add return statement to prevent further execution
@@ -149,26 +146,33 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         if (newUser && newUser.address) {
             // Initialize the game contract (child)
-            updateContract({
+            const gameContractData = updateContract({
                 address: contractGame.address,
                 abi: contractGame.abi,
                 chainId: Number(contractGame.chainId),
-            }, false);
+            });
 
             // Initialize the main contract (parent)
-            updateContract({
+            const mainContractData = updateContract({
                 address: contractMain.address,
                 abi: contractMain.abi,
                 chainId: Number(contractMain.chainId),
-            }, true);
+            });
 
-            // Initialize the socket contract (for event listening)
-            if (parentContract)
-                setSocketOnContract(parentContract);
-            else
+            if (gameContractData) {
+                setContract(gameContractData);
+            } else {
+                console.log("Game contract not found... Problematic");
+            }
+
+            if (mainContractData) {
+                setParentContract(mainContractData);
+                setSocketOnContract(mainContractData);
+            } else {
                 console.log("Parent contract not found, so no web socket provider");
+            }
 
-            console.log("User logged in with game and parent contracts");
+            console.log("User logged in!!");
         } else {
             console.log("Failed to get user wallet for contract login");
         }
@@ -182,10 +186,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return (
         <UserContext.Provider value={{
             user,
+            isInitializing,
             contract,
             parentContract,
             socketContract,
-            loginWithGameContract
+            loginWithGameContract,
         }}>
             {children}
         </UserContext.Provider>
