@@ -10,6 +10,7 @@ interface UserContextType {
     loginWithGameContract: () => void;
     contract: Contract | null;
     parentContract: Contract | null;
+    socketContract: Contract | null;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -19,7 +20,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [isInitializing, setIsInitializing] = useState(true);
     const [contract, setContract] = useState<Contract | null>(null);
     const [parentContract, setParentContract] = useState<Contract | null>(null);
-
+    const [socketContract, setSocketContract] = useState<Contract | null>(null);
     // Initialize user on mount
     useEffect(() => {
         const initializeUser = async () => {
@@ -100,16 +101,39 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     }
 
-    function setSocket() {
+    function setSocketOnContract(contract: Contract) {
         if (!user) {
             console.log("Socket reverted... no user found...");
             return;
         }
 
+        if (!contract || !contract.address || !contract.abi) {
+            console.log("Socket reverted... no contract found...");
+            return; // Add return statement to prevent further execution
+        }
+
         try {
+            if (INFURA_PROJECT_ID === "" || INFURA_PROJECT_ID === undefined || INFURA_PROJECT_ID === null) {
+                console.log("INFURA_PROJECT_ID is not set, cannot create WebSocket provider");
+                return;
+            }
+
             const wsProvider = new ethers.WebSocketProvider(
                 `wss://sepolia.infura.io/ws/v3/${INFURA_PROJECT_ID}`
             );
+
+            const socketContractData: Contract = {
+                address: contract.address,
+                abi: contract.abi,
+                instance: new ethers.Contract(
+                    contract.address,
+                    contract.abi,
+                    wsProvider
+                ),
+                chainId: Number(contract.chainId),
+            };
+
+            setSocketContract(socketContractData);
             user.socket = wsProvider;
             console.log("WebSocket provider set up successfully");
 
@@ -138,7 +162,12 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 chainId: Number(contractMain.chainId),
             }, true);
 
-            setSocket();
+            // Initialize the socket contract (for event listening)
+            if (parentContract)
+                setSocketOnContract(parentContract);
+            else
+                console.log("Parent contract not found, so no web socket provider");
+
             console.log("User logged in with game and parent contracts");
         } else {
             console.log("Failed to get user wallet for contract login");
@@ -148,12 +177,14 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     window.uu = user;
     window.cc = contract;
     window.pc = parentContract;
+    window.sc = socketContract;
 
     return (
         <UserContext.Provider value={{
             user,
             contract,
             parentContract,
+            socketContract,
             loginWithGameContract
         }}>
             {children}
