@@ -49,8 +49,10 @@ function initListener(contract: ethers.Contract, logger: EventLogger) {
         contract.removeAllListeners("Burn");
     };
 }
+
+// (user.socket.destroy()), dont forget to destroy the socket connection when the component unmounts
 export function ContractOnListener() {
-    const { parentContract: contract } = useUser();
+    const { socketContract: contract } = useUser();
     const [events, setEvents] = useState<EventData[]>([]);
 
     useEffect(() => {
@@ -73,7 +75,7 @@ export function ContractOnListener() {
 
     return (
         <div>
-            <h3>Contract Events</h3>
+            <h3>Contract Events hello</h3>
             {events.length === 0 ? (
                 <p>No events detected yet</p>
             ) : (
