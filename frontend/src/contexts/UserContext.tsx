@@ -4,7 +4,7 @@ import { getWallet } from '@/lib/rpc-json';
 import { ethers } from 'ethers';
 import { contractGame } from './ContractGame';
 import { contractMain } from './ContractGame';
-
+import { INFURA_PROJECT_ID } from '@/lib/rpc-network';
 interface UserContextType {
     user: User | null;
     loginWithGameContract: () => void;
@@ -39,8 +39,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         initializeUser();
     }, []);
 
-    // needs websocketProvider, so new 
-    // Event Listening for onChanged
     useEffect(() => {
         if (typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
             const handleChainChanged = () => {
@@ -102,6 +100,51 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     }
 
+    function setSocket() {
+        if (!user) {
+            console.log("Socket reverted... no user found...");
+            return;
+        }
+
+        try {
+            const wsProvider = new ethers.WebSocketProvider(
+                `wss://sepolia.infura.io/ws/v3/${INFURA_PROJECT_ID}`
+            );
+            user.socket = wsProvider;
+            console.log("WebSocket provider set up successfully");
+
+        } catch (error) {
+            console.error("Error setting up WebSocket provider:", error);
+            return null;
+        }
+    }
+
+    const loginWithGameContract = async () => {
+        const newUser = await getWallet();
+        setUser(newUser);
+
+        if (newUser && newUser.address) {
+            // Initialize the game contract (child)
+            updateContract({
+                address: contractGame.address,
+                abi: contractGame.abi,
+                chainId: Number(contractGame.chainId),
+            }, false);
+
+            // Initialize the main contract (parent)
+            updateContract({
+                address: contractMain.address,
+                abi: contractMain.abi,
+                chainId: Number(contractMain.chainId),
+            }, true);
+
+            setSocket();
+            console.log("User logged in with game and parent contracts");
+        } else {
+            console.log("Failed to get user wallet for contract login");
+        }
+    };
+
     window.uu = user;
     window.cc = contract;
     window.pc = parentContract;
@@ -111,30 +154,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             user,
             contract,
             parentContract,
-            loginWithGameContract: async () => {
-                const newUser = await getWallet();
-                setUser(newUser);
-
-                if (newUser && newUser.address) {
-                    // Initialize the game contract (child)
-                    updateContract({
-                        address: contractGame.address,
-                        abi: contractGame.abi,
-                        chainId: contractGame.chainId,
-                    }, false);
-
-                    // Initialize the main contract (parent)
-                    updateContract({
-                        address: contractMain.address,
-                        abi: contractMain.abi,
-                        chainId: contractMain.chainId,
-                    }, true);
-
-                    console.log("User logged in with game and parent contracts");
-                } else {
-                    console.log("Failed to get user wallet for contract login");
-                }
-            },
+            loginWithGameContract
         }}>
             {children}
         </UserContext.Provider>

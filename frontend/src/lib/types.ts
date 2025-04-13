@@ -7,11 +7,13 @@ export type Network = {
   currency: string;
 };
 
+
 export type User = {
   address: string;
   network: Network;
   signer: ethers.JsonRpcSigner;
   provider: ethers.BrowserProvider;
+  socket: ethers.WebSocketProvider;
   //needed to add WebSocketProvider, init in UserContext and use it in eventlistener.
 };
 
