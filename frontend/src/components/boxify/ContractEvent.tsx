@@ -1,97 +1,67 @@
 import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { useUser } from '@/contexts/UserContext';
-
-interface Event {
-  address: string;
-  tokenId: number;
-  total: number;
-}
-
-interface RawEvent {
-  address: string;
-  tokenId: number;
-  amount: number;
-  type: 'mint' | 'burn';
-}
-
-interface TokenOwnership {
-  address: string;
-  total: number;
-}
-
-interface TokenOwnerships {
-  [tokenId: number]: TokenOwnership[];
-}
+import { useNotifications } from '@/contexts/NotificationContext';
+import { getTokenById, RawEvent, TokenOwnerships } from '@/lib/types';
+import { getEventResult, getEventsByTokenId } from '@/lib/utils';
+import TokenEventsTable from './TokenEventsTable';
 
 async function getLogs(filter: ethers.Filter, provider: ethers.Provider): Promise<ethers.Log[]> {
   const raw = await provider.getLogs(filter);
   return raw;
 }
 
-// Function to calculate total tokens by address
-function getEventResult(events: RawEvent[]): Event[] {
-  const balanceMap: Record<string, Record<number, number>> = {};
+// Function to initialize listeners for real-time events
+function initListener(contract: ethers.Contract, addEventCallback: (newEvent: RawEvent) => void, showNotification: any) {
+  contract.on("Mint", (to: string, tokenId: number, amount: number, event: any) => {
+    const token = getTokenById(Number(tokenId));
+    const msg = `Mint | ${to.substring(0, 2)}...${to.substring(to.length - 3)} -> ${token.name} | Amount ${amount}`;
+    console.log("Mint event detected", to, token.name, amount);
+    showNotification(msg, token.color || "blue");
 
-  events.forEach(event => {
-    const { address, tokenId, amount, type } = event;
-
-    if (!balanceMap[address]) {
-      balanceMap[address] = {};
-    }
-
-    if (!balanceMap[address][tokenId]) {
-      balanceMap[address][tokenId] = 0;
-    }
-
-    if (type === 'mint') {
-      balanceMap[address][tokenId] += amount;
-    } else if (type === 'burn') {
-      balanceMap[address][tokenId] -= amount;
-    }
-  });
-
-  const result: Event[] = [];
-
-  Object.entries(balanceMap).forEach(([address, tokens]) => {
-    Object.entries(tokens).forEach(([tokenId, total]) => {
-      result.push({
-        address,
-        tokenId: Number(tokenId),
-        total
-      });
-    });
-  });
-
-  return result;
-}
-
-function getEventsByTokenId(events: Event[]): TokenOwnerships {
-  const tokenMap: TokenOwnerships = {};
-  
-  events.forEach(event => {
-    const { tokenId, address, total } = event;
+    const newEvent: RawEvent = {
+      address: to,
+      tokenId: Number(tokenId),
+      amount: Number(amount),
+      type: 'mint',
+      transactionHash: event.transactionHash,
+      blockNumber: event.blockNumber
+    };
     
-    if (!tokenMap[tokenId]) {
-      tokenMap[tokenId] = [];
-    }
-    
-    // should always be > 0, but just checking
-    if (total > 0) {
-      tokenMap[tokenId].push({
-        address,
-        total
-      });
-    }
+    addEventCallback(newEvent);
   });
-  
-  return tokenMap;
+
+  // Listen for Burn events
+  contract.on("Burn", (from: string, tokenId: number, amount: number, event: any) => {
+    const token = getTokenById(Number(tokenId));
+    const msg = `Burn | ${from.substring(0, 2)}...${from.substring(from.length - 3)} -> ${token.name} | Amount ${amount}`;
+    console.log("Burn event detected", from, token.name, amount);
+    showNotification(msg, token.color || "blue");
+
+    const newEvent: RawEvent = {
+      address: from,
+      tokenId: Number(tokenId),
+      amount: Number(amount),
+      type: 'burn',
+      transactionHash: event.transactionHash,
+      blockNumber: event.blockNumber
+    };
+    
+    addEventCallback(newEvent);
+  });
+
+  // Return a cleanup function to remove listeners
+  return () => {
+    contract.removeAllListeners("Mint");
+    contract.removeAllListeners("Burn");
+  };
 }
 
 export function ContractEventComponent() {
-  const { user, parentContract: contract } = useUser();
-  const [events, setEvents] = useState<Event[]>([]);
+  const { user, parentContract: contract, socketContract } = useUser();
+  const { showNotification } = useNotifications();
   const [tokenEvents, setTokenEvents] = useState<TokenOwnerships>({});
+  const [rawEvents, setRawEvents] = useState<RawEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -99,6 +69,27 @@ export function ContractEventComponent() {
     return <div>Please connect wallet</div>;
   }
 
+  // Function to add a new event and update all states
+  const addNewEvent = (newEvent: RawEvent) => {
+    // Update rawEvents
+    setRawEvents(prevRawEvents => {
+      const updatedRawEvents = [...prevRawEvents, newEvent];
+      
+      // Save to localStorage for persistence
+      localStorage.setItem('rawEvents', JSON.stringify(updatedRawEvents));
+      
+      // Recalculate processed events
+      const processedEvents = getEventResult(updatedRawEvents);
+      
+      // Recalculate token events
+      const eventsByToken = getEventsByTokenId(processedEvents);
+      setTokenEvents(eventsByToken);
+      
+      return updatedRawEvents;
+    });
+  };
+
+  // Effect for initial data loading
   useEffect(() => {
     async function fetchData() {
       try {
@@ -154,9 +145,13 @@ export function ContractEventComponent() {
         });
 
         const allRawEvents = [...parsedMintLogs, ...parsedBurnLogs];
-        const processedEvents = getEventResult(allRawEvents);
-        setEvents(processedEvents);
+        setRawEvents(allRawEvents);
         
+        // Save to localStorage for persistence
+        localStorage.setItem('rawEvents', JSON.stringify(allRawEvents));
+        
+        // Use utility functions
+        const processedEvents = getEventResult(allRawEvents);
         const eventsByToken = getEventsByTokenId(processedEvents);
         setTokenEvents(eventsByToken);
 
@@ -171,6 +166,16 @@ export function ContractEventComponent() {
     fetchData();
   }, []);
 
+  // Effect for real-time updates
+  useEffect(() => {
+    if (!socketContract?.instance) return;
+    
+    const cleanup = initListener(socketContract.instance, addNewEvent, showNotification);
+    return () => {
+      cleanup();
+    };
+  }, [socketContract]);
+
   if (loading) {
     return <div></div>;
   }
@@ -180,12 +185,12 @@ export function ContractEventComponent() {
   }
 
   return (
-    <div>
-      {/* <h2>Events by Address</h2>
-      <pre>{JSON.stringify(events, null, 2)}</pre>
-       */}
-      <h2>Events by Token ID</h2>
-      <pre>{JSON.stringify(tokenEvents, null, 2)}</pre>
+    <div className="container mx-auto">
+      <TokenEventsTable
+        tokenEvents={tokenEvents}
+        rawEvents={rawEvents}
+        userAddress={user.address} // Pass the user's address to highlight it
+      />
     </div>
   );
 }

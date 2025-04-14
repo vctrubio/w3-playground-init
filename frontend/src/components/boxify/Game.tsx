@@ -1,26 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { executeContract } from '@/lib/rpc-contract';
-
-interface GameItem {
-  id: number;
-  title: string;
-  color: string;
-  msg: string;
-}
+import { Token, TOKENS, RawEvent } from '@/lib/types';
+import { getTokenBalance, formatTokenBalance } from '@/lib/utils';
 
 const GameBox = ({
   item,
   onMint,
   onBurn,
   canBurn,
-  loading
+  loading,
+  userBalance
 }: {
-  item: GameItem;
-  onMint: (item: GameItem) => void;
-  onBurn: (item: GameItem) => void;
+  item: Token;
+  onMint: (item: Token) => void;
+  onBurn: (item: Token) => void;
   canBurn: boolean;
   loading: boolean;
+  userBalance: number;
 }) => {
   return (
     <div
@@ -39,18 +36,25 @@ const GameBox = ({
           background: `${item.color}25`
         }}
       >
-        <div className="flex items-center">
-          <div
-            className="w-3 h-3 rounded-full mr-2"
-            style={{ backgroundColor: item.color }}
-          ></div>
-          {item.title}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+              style={{
+                color: item.color,
+                border: `1px solid ${item.color}`,
+                backgroundColor: `${item.color}20`
+              }}
+            >
+              {userBalance}
+            </div>
+            {item.name}
+          </div>
         </div>
       </div>
 
       <div className="p-4">
         <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-          {item.msg}
+          {item.description}
         </p>
 
         <div className="flex gap-2 mt-2">
@@ -103,23 +107,97 @@ const GameBox = ({
 };
 
 function Game() {
-  const { contract } = useUser();
+  const { contract, user, parentContract } = useUser();
   const [loading, setLoading] = useState<Record<string, boolean>>({});
+  const [rawEvents, setRawEvents] = useState<RawEvent[]>([]);
+  const [balances, setBalances] = useState<Record<number, number>>({});
 
-  const gameItems: GameItem[] = [
-    { id: 0, title: "SEED", color: "#E0115F", msg: "Free mint" },
-    { id: 1, title: "WATER", color: "#0F52BA", msg: "Free mint" },
-    { id: 2, title: "SOIL", color: "#50C878", msg: "Free mint" },
-    { id: 3, title: "PLANT", color: "#8531BA", msg: "Needs SEED and WATER" },
-    { id: 4, title: "FRUIT", color: "#307DA1", msg: "Needs WATER and SOIL" },
-    { id: 5, title: "FLOWER", color: "#986C8E", msg: "Needs SEED and SOIL" },
-    { id: 6, title: "BASKET", color: "#483D6F", msg: "Needs SEED, WATER, and SOIL" }
-  ];
-
-  // In the assignment
+  const gameItems = TOKENS;
   const canBurnItem = (id: number) => id >= 3 && id <= 7;
 
-  const handleMint = async (item: GameItem) => {
+  // Fetch user's token balances when the component mounts
+  useEffect(() => {
+    if (!user || !parentContract?.instance) return;
+
+    // This would typically be a function that gets events from the blockchain
+    // For now, we'll use localStorage to simulate persistence between renders
+    const storedEvents = localStorage.getItem('rawEvents');
+    if (storedEvents) {
+      try {
+        const events = JSON.parse(storedEvents) as RawEvent[];
+        setRawEvents(events);
+
+        // Calculate balances for the current user
+        const userBalances: Record<number, number> = {};
+        TOKENS.forEach(token => {
+          userBalances[token.id] = getTokenBalance(events, token.id, user.address);
+        });
+        setBalances(userBalances);
+      } catch (e) {
+        console.error('Error parsing stored events:', e);
+      }
+    }
+
+    // Set up event listener for real-time updates
+    if (parentContract.instance) {
+      const mintFilter = parentContract.instance.filters.Mint(user.address);
+      const burnFilter = parentContract.instance.filters.Burn(user.address);
+
+      const handleMintEvent = (address: string, tokenId: number, amount: number, event: any) => {
+        const newEvent: RawEvent = {
+          address,
+          tokenId: Number(tokenId),
+          amount: Number(amount),
+          type: 'mint',
+          transactionHash: event.transactionHash,
+          blockNumber: event.blockNumber
+        };
+
+        setRawEvents(prev => {
+          const updated = [...prev, newEvent];
+          localStorage.setItem('rawEvents', JSON.stringify(updated));
+          return updated;
+        });
+
+        setBalances(prev => ({
+          ...prev,
+          [tokenId]: (prev[tokenId] || 0) + amount
+        }));
+      };
+
+      const handleBurnEvent = (address: string, tokenId: number, amount: number, event: any) => {
+        const newEvent: RawEvent = {
+          address,
+          tokenId: Number(tokenId),
+          amount: Number(amount),
+          type: 'burn',
+          transactionHash: event.transactionHash,
+          blockNumber: event.blockNumber
+        };
+
+        setRawEvents(prev => {
+          const updated = [...prev, newEvent];
+          localStorage.setItem('rawEvents', JSON.stringify(updated));
+          return updated;
+        });
+
+        setBalances(prev => ({
+          ...prev,
+          [tokenId]: (prev[tokenId] || 0) - amount
+        }));
+      };
+
+      parentContract.instance.on(mintFilter, handleMintEvent);
+      parentContract.instance.on(burnFilter, handleBurnEvent);
+
+      return () => {
+        parentContract.instance?.off(mintFilter, handleMintEvent);
+        parentContract.instance?.off(burnFilter, handleBurnEvent);
+      };
+    }
+  }, [user, parentContract]);
+
+  const handleMint = async (item: Token) => {
     if (!contract) {
       console.log('No contract available. Please connect wallet first.');
       return;
@@ -129,7 +207,7 @@ function Game() {
     setLoading({ ...loading, [actionKey]: true });
 
     try {
-      console.log(`Starting to mint ${item.title}...`);
+      console.log(`Starting to mint ${item.name}...`);
       console.log(`Executing "mint" on contract with arg:`, item.id);
 
       const result = await executeContract({
@@ -138,29 +216,28 @@ function Game() {
         functionArgs: [item.id]
       });
 
-      console.log(`Mint result for ${item.title} (ID: ${item.id}):`, result);
+      console.log(`Mint result for ${item.name} (ID: ${item.id}):`, result);
 
-      // Check if the result has a hash, indicating transaction was sent
       if (result && result.hash) {
-        console.log(`Successfully minted ${item.title}! Transaction: ${result.hash}`);
+        console.log(`Successfully minted ${item.name}! Transaction: ${result.hash}`);
       } else {
-        console.log(`${item.title} minted successfully!`);
+        console.log(`${item.name} minted successfully!`);
       }
     } catch (error) {
-      console.error(`Error minting ${item.title} (ID: ${item.id}):`, error);
+      console.error(`Error minting ${item.name} (ID: ${item.id}):`, error);
     } finally {
       setLoading({ ...loading, [actionKey]: false });
     }
   };
 
-  const handleBurn = async (item: GameItem) => {
+  const handleBurn = async (item: Token) => {
     if (!contract) {
       console.log('No contract available. Please connect wallet first.');
       return;
     }
 
     if (!canBurnItem(item.id)) {
-      console.log(`${item.title} cannot be burned`);
+      console.log(`${item.name} cannot be burned`);
       return;
     }
 
@@ -168,7 +245,7 @@ function Game() {
     setLoading({ ...loading, [actionKey]: true });
 
     try {
-      console.log(`Starting to burn ${item.title}...`);
+      console.log(`Starting to burn ${item.name}...`);
       console.log(`Executing "burn" on contract with arg:`, item.id);
 
       const result = await executeContract({
@@ -177,27 +254,24 @@ function Game() {
         functionArgs: [item.id]
       });
 
-      console.log(`Burn result for ${item.title} (ID: ${item.id}):`, result);
+      console.log(`Burn result for ${item.name} (ID: ${item.id}):`, result);
 
       if (result && result.hash) {
-        console.log(`Successfully burned ${item.title}! Transaction: ${result.hash}`);
+        console.log(`Successfully burned ${item.name}! Transaction: ${result.hash}`);
       } else {
-        console.log(`${item.title} burned successfully!`);
+        console.log(`${item.name} burned successfully!`);
       }
     } catch (error) {
-      console.error(`Error burning ${item.title} (ID: ${item.id}):`, error);
+      console.error(`Error burning ${item.name} (ID: ${item.id}):`, error);
     } finally {
       setLoading({ ...loading, [actionKey]: false });
     }
   };
 
-  // Check if the last item should take full width
   const shouldLastItemSpanFull = gameItems.length % 3 === 1;
 
   return (
     <div className="p-6 max-w-5xl mx-auto border-b border-r border-l">
-      <h1 className="text-xl font-bold mb-6 ">Collect all the collectables</h1>
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {gameItems.map((item) => (
           <div
@@ -210,6 +284,7 @@ function Game() {
               onBurn={handleBurn}
               canBurn={canBurnItem(item.id)}
               loading={loading[`mint-${item.id}`] || loading[`burn-${item.id}`] || false}
+              userBalance={balances[item.id] || 0}
             />
           </div>
         ))}

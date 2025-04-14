@@ -65,15 +65,15 @@ export default function Home() {
         light: "bg-purple-200",
       },
     },
-    {
-      id: "eventListener",
-      label: "Contract Listener",
-      component: ContractOnListener,
-      theme: {
-        dark: "bg-indigo-800",
-        light: "bg-indigo-200",
-      },
-    },
+    // {
+    //   id: "eventListener",
+    //   label: "Contract Listener",
+    //   component: ContractOnListener,
+    //   theme: {
+    //     dark: "bg-indigo-800",
+    //     light: "bg-indigo-200",
+    //   },
+    // },
     {
       id: "game",
       label: "Game",
