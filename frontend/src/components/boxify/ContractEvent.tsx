@@ -13,11 +13,12 @@ async function getLogs(filter: ethers.Filter, provider: ethers.Provider): Promis
 
 // Function to initialize listeners for real-time events
 function initListener(contract: ethers.Contract, addEventCallback: (newEvent: RawEvent) => void, showNotification: any) {
+
   contract.on("Mint", (to: string, tokenId: number, amount: number, event: any) => {
     const token = getTokenById(Number(tokenId));
     const msg = `Mint | ${to.substring(0, 2)}...${to.substring(to.length - 3)} -> ${token.name} | Amount ${amount}`;
-    console.log("Mint event detected", to, token.name, amount);
-    showNotification(msg, token.color || "blue");
+    console.log(msg);
+    showNotification(msg, "blue");
 
     const newEvent: RawEvent = {
       address: to,
@@ -31,12 +32,11 @@ function initListener(contract: ethers.Contract, addEventCallback: (newEvent: Ra
     addEventCallback(newEvent);
   });
 
-  // Listen for Burn events
   contract.on("Burn", (from: string, tokenId: number, amount: number, event: any) => {
     const token = getTokenById(Number(tokenId));
     const msg = `Burn | ${from.substring(0, 2)}...${from.substring(from.length - 3)} -> ${token.name} | Amount ${amount}`;
-    console.log("Burn event detected", from, token.name, amount);
-    showNotification(msg, token.color || "blue");
+    console.log(msg);
+    showNotification(msg, "blue");
 
     const newEvent: RawEvent = {
       address: from,

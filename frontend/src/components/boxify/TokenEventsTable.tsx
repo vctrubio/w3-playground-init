@@ -72,9 +72,10 @@ export const TokenEventsTable: React.FC<TokenEventsTableProps> = ({ tokenEvents,
                   
                   // Apply special styling for the user's address
                   const addressClass = isUser 
-                    ? "py-2 px-4 border-b border-r border-gray-200 dark:border-gray-600 font-mono text-sm bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
+                    ? "py-2 px-4 border-b border-r border-gray-200 dark:border-gray-600 font-mono text-sm bg-yellow-100 dark:bg-orange-900 text-yellow-800 dark:text-orange-200"
                     : "py-2 px-4 border-b border-r border-gray-200 dark:border-gray-600 font-mono text-sm text-gray-800 dark:text-gray-200";
                   
+
                   const tokenStyle = { 
                     backgroundColor: `${token.color}20`,
                     borderLeft: `3px solid ${token.color}`
@@ -91,7 +92,6 @@ export const TokenEventsTable: React.FC<TokenEventsTableProps> = ({ tokenEvents,
                       ) : null}
                       <td className={addressClass}>
                         {ownership.address.substring(0, 6)}...{ownership.address.substring(ownership.address.length - 4)}
-                        {isUser && <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200">You</span>}
                       </td>
                       <td className="py-2 px-4 border-b border-r border-gray-200 dark:border-gray-600 text-center text-gray-800 dark:text-gray-200">{minted}</td>
                       <td className="py-2 px-4 border-b border-r border-gray-200 dark:border-gray-600 text-center text-gray-800 dark:text-gray-200">{burned}</td>

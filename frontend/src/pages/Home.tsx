@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import Game from "@/components/boxify/Game";
+import User from "@/components/boxify/User";
 import ContractABI from "@/components/boxify/ContractABI";
 import ContractEvent from "@/components/boxify/ContractEvent";
-import ContractOnListener from "@/components/boxify/ContractOnListener";
-import User from "@/components/boxify/User";
 import { BoxContainer, BoxProps } from "../components/boxify/BoxInterface";
 import { getIsWeb3 } from "@/lib/rpc-json";
 import { useNotifications } from "@/contexts/NotificationContext";
@@ -47,33 +46,15 @@ export default function Home() {
    *   - light: CSS class for light mode
    */
   const boxModules: BoxProps[] = [
-    // {
-    //   id: "user",
-    //   label: "User Profile",
-    //   component: User,
-    //   theme: {
-    //     dark: "bg-yellow-800",
-    //     light: "bg-yellow-200",
-    //   },
-    // },
     {
-      id: "event",
-      label: "Contract Events",
-      component: ContractEvent,
+      id: "user",
+      label: "User Profile",
+      component: User,
       theme: {
-        dark: "bg-purple-800",
-        light: "bg-purple-200",
+        dark: "bg-red-800",
+        light: "bg-yellow-200",
       },
     },
-    // {
-    //   id: "eventListener",
-    //   label: "Contract Listener",
-    //   component: ContractOnListener,
-    //   theme: {
-    //     dark: "bg-indigo-800",
-    //     light: "bg-indigo-200",
-    //   },
-    // },
     {
       id: "game",
       label: "Game",
@@ -83,6 +64,16 @@ export default function Home() {
         light: "bg-green-200",
       },
     },
+    {
+      id: "event",
+      label: "Contract Events",
+      component: ContractEvent,
+      theme: {
+        dark: "bg-purple-800",
+        light: "bg-purple-200",
+      },
+    },
+
     {
       id: "contract",
       label: "Contract ABI",

@@ -21,7 +21,7 @@ const Notification: React.FC = () => {
   };
 
   return (
-    <div className="absolute top right-5 z-50 flex flex-col items-end">
+    <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end">
       {notifications.map((notification) => (
         <div
           key={notification.id}
