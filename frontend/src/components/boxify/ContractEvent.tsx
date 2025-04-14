@@ -16,9 +16,9 @@ function initListener(contract: ethers.Contract, addEventCallback: (newEvent: Ra
 
   contract.on("Mint", (to: string, tokenId: number, amount: number, event: any) => {
     const token = getTokenById(Number(tokenId));
-    const msg = `Mint | ${to.substring(0, 2)}...${to.substring(to.length - 3)} -> ${token.name} | Amount ${amount}`;
+    const msg = `${to.substring(0, 2)}...${to.substring(to.length - 3)} minted ${token.name}`;
     console.log(msg);
-    showNotification(msg, "blue");
+    showNotification(msg, "blue", 5000); // Show for 5 seconds
 
     const newEvent: RawEvent = {
       address: to,
@@ -30,13 +30,24 @@ function initListener(contract: ethers.Contract, addEventCallback: (newEvent: Ra
     };
     
     addEventCallback(newEvent);
+    
+    // Dispatch a custom event that Game.tsx can listen to
+    const tokenUpdateEvent = new CustomEvent('tokenUpdate', { 
+      detail: { 
+        type: 'mint',
+        address: to,
+        tokenId: Number(tokenId),
+        amount: Number(amount)
+      }
+    });
+    window.dispatchEvent(tokenUpdateEvent);
   });
 
   contract.on("Burn", (from: string, tokenId: number, amount: number, event: any) => {
     const token = getTokenById(Number(tokenId));
-    const msg = `Burn | ${from.substring(0, 2)}...${from.substring(from.length - 3)} -> ${token.name} | Amount ${amount}`;
+    const msg = `${from.substring(0, 2)}...${from.substring(from.length - 3)} burned ${token.name}`;
     console.log(msg);
-    showNotification(msg, "blue");
+    showNotification(msg, "blue", 5000); // Show for 5 seconds
 
     const newEvent: RawEvent = {
       address: from,
@@ -48,6 +59,17 @@ function initListener(contract: ethers.Contract, addEventCallback: (newEvent: Ra
     };
     
     addEventCallback(newEvent);
+    
+    // Dispatch a custom event that Game.tsx can listen to
+    const tokenUpdateEvent = new CustomEvent('tokenUpdate', { 
+      detail: { 
+        type: 'burn',
+        address: from,
+        tokenId: Number(tokenId),
+        amount: Number(amount)
+      }
+    });
+    window.dispatchEvent(tokenUpdateEvent);
   });
 
   // Return a cleanup function to remove listeners

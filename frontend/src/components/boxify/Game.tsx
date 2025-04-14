@@ -197,6 +197,37 @@ function Game() {
     }
   }, [user, parentContract]);
 
+  useEffect(() => {
+    if (!user || !parentContract?.instance) return;
+
+    // Add listener for custom tokenUpdate events
+    const handleTokenUpdate = (event: CustomEvent) => {
+      const { type, address, tokenId, amount } = event.detail;
+      
+      // Only update balances if the event is for the current user
+      if (address.toLowerCase() === user.address.toLowerCase()) {
+        setBalances(prev => {
+          const currentBalance = prev[tokenId] || 0;
+          const newBalance = type === 'mint' 
+            ? currentBalance + amount 
+            : currentBalance - amount;
+            
+          return {
+            ...prev,
+            [tokenId]: newBalance
+          };
+        });
+      }
+    };
+
+    // Add the event listener
+    window.addEventListener('tokenUpdate', handleTokenUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('tokenUpdate', handleTokenUpdate as EventListener);
+    };
+  }, [user, parentContract]);
+
   const handleMint = async (item: Token) => {
     if (!contract) {
       console.log('No contract available. Please connect wallet first.');
