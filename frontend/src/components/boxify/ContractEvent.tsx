@@ -18,7 +18,7 @@ function initListener(contract: ethers.Contract, addEventCallback: (newEvent: Ra
     const token = getTokenById(Number(tokenId));
     const msg = `${to.substring(0, 2)}...${to.substring(to.length - 3)} minted ${token.name}`;
     console.log(msg);
-    showNotification(msg, "blue", 5000); // Show for 5 seconds
+    showNotification(msg, "success", 5000); // Changed from "blue" to "success" for mint events
 
     const newEvent: RawEvent = {
       address: to,
@@ -47,7 +47,7 @@ function initListener(contract: ethers.Contract, addEventCallback: (newEvent: Ra
     const token = getTokenById(Number(tokenId));
     const msg = `${from.substring(0, 2)}...${from.substring(from.length - 3)} burned ${token.name}`;
     console.log(msg);
-    showNotification(msg, "blue", 5000); // Show for 5 seconds
+    showNotification(msg, "warning", 5000); // Changed from "blue" to "warning" for burn events
 
     const newEvent: RawEvent = {
       address: from,

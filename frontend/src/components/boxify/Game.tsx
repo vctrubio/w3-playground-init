@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useUser } from '@/contexts/UserContext';
+import { useNotifications } from '@/contexts/NotificationContext';
 import { executeContract } from '@/lib/rpc-contract';
 import { Token, TOKENS, RawEvent } from '@/lib/types';
 import { getTokenBalance, formatTokenBalance } from '@/lib/utils';
@@ -108,6 +109,7 @@ const GameBox = ({
 
 function Game() {
   const { contract, user, parentContract } = useUser();
+  const { showNotification } = useNotifications();
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [rawEvents, setRawEvents] = useState<RawEvent[]>([]);
   const [balances, setBalances] = useState<Record<number, number>>({});
@@ -256,6 +258,25 @@ function Game() {
       }
     } catch (error) {
       console.error(`Error minting ${item.name} (ID: ${item.id}):`, error);
+      
+      // Extract meaningful error message
+      let errorMessage = `Failed to mint ${item.name}`;
+      
+      if (error instanceof Error) {
+        // Check if this is a blockchain revert error with a reason
+        const errorString = error.toString();
+        
+        // Look for the revert reason pattern in ethers.js errors
+        const reasonMatch = errorString.match(/reason="([^"]+)"/);
+        if (reasonMatch && reasonMatch[1]) {
+          errorMessage = reasonMatch[1];
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+      }
+      
+      // Show user-friendly notification
+      showNotification(errorMessage, "error", 5000);
     } finally {
       setLoading({ ...loading, [actionKey]: false });
     }
@@ -294,31 +315,73 @@ function Game() {
       }
     } catch (error) {
       console.error(`Error burning ${item.name} (ID: ${item.id}):`, error);
+      
+      // Extract meaningful error message
+      let errorMessage = `Failed to burn ${item.name}`;
+      
+      if (error instanceof Error) {
+        // Check if this is a blockchain revert error with a reason
+        const errorString = error.toString();
+        
+        // Look for the revert reason pattern in ethers.js errors
+        const reasonMatch = errorString.match(/reason="([^"]+)"/);
+        if (reasonMatch && reasonMatch[1]) {
+          errorMessage = reasonMatch[1];
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+      }
+      
+      // Show user-friendly notification
+      showNotification(errorMessage, "error", 5000);
     } finally {
       setLoading({ ...loading, [actionKey]: false });
     }
   };
 
   const shouldLastItemSpanFull = gameItems.length % 3 === 1;
+  
+  // Find basket token for special styling
+  const basketToken = gameItems.find(item => item.name === "BASKET");
+  const bucketColor = basketToken?.color || "#483D6F";
 
   return (
-    <div className="p-6 max-w-5xl mx-auto border-b border-r border-l">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {gameItems.map((item) => (
-          <div
-            key={item.id}
-            className={`${shouldLastItemSpanFull && item.id === gameItems.length - 1 ? 'md:col-span-2 lg:col-span-3' : ''}`}
-          >
-            <GameBox
-              item={item}
-              onMint={handleMint}
-              onBurn={handleBurn}
-              canBurn={canBurnItem(item.id)}
-              loading={loading[`mint-${item.id}`] || loading[`burn-${item.id}`] || false}
-              userBalance={balances[item.id] || 0}
-            />
-          </div>
-        ))}
+    <div className="relative mt-8 mb-4">
+      {/* Simple bucket handle */}
+      <div 
+        className="absolute left-1/2 -translate-x-1/2 w-32 h-12 -top-8 rounded-t-full z-10"
+        style={{
+          border: `3px solid ${bucketColor}`,
+          borderBottom: 'none',
+          background: 'transparent',
+        }}
+      />
+      
+      {/* Main container with bucket outline */}
+      <div className="p-6 max-w-5xl mx-auto border-4 rounded-lg dark:bg-gray-800/30 bg-white/80"
+        style={{
+          borderColor: bucketColor,
+          borderRadius: '10px 10px 20px 20px', // More rounded at the bottom
+          boxShadow: `0 4px 12px ${bucketColor}40`,
+        }}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {gameItems.map((item) => (
+            <div
+              key={item.id}
+              className={`${shouldLastItemSpanFull && item.id === gameItems.length - 1 ? 'md:col-span-2 lg:col-span-3' : ''}`}
+            >
+              <GameBox
+                item={item}
+                onMint={handleMint}
+                onBurn={handleBurn}
+                canBurn={canBurnItem(item.id)}
+                loading={loading[`mint-${item.id}`] || loading[`burn-${item.id}`] || false}
+                userBalance={balances[item.id] || 0}
+              />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
