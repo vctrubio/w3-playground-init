@@ -44,7 +44,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, []);
 
     useEffect(() => {
-        if (typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
+        if (typeof window !== 'undefined' && window?.ethereum) {
             const handleChainChanged = () => {
                 console.log("Network changed, refreshing data...");
                 getWallet().then(setUser);
@@ -60,12 +60,12 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 }
             };
 
-            window.ethereum.on('chainChanged', handleChainChanged);
-            window.ethereum.on('accountsChanged', handleAccountsChanged);
+            window.ethereum?.on('chainChanged', handleChainChanged);
+            window.ethereum?.on('accountsChanged', handleAccountsChanged);
 
             return () => {
-                window.ethereum.removeListener('chainChanged', handleChainChanged);
-                window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+                window.ethereum?.removeListener('chainChanged', handleChainChanged);
+                window.ethereum?.removeListener('accountsChanged', handleAccountsChanged);
             };
         }
     }, [user]);
@@ -179,10 +179,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    window.uu = user;
-    window.cc = contract;
-    window.pc = parentContract;
-    window.sc = socketContract;
+    // window.uu = user;
+    // window.cc = contract;
+    // window.pc = parentContract;
+    // window.sc = socketContract;
 
     return (
         <UserContext.Provider value={{

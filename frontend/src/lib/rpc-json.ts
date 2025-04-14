@@ -3,7 +3,7 @@ import { User } from "./types";
 
 export function getIsWeb3() {
   return (
-    typeof window.ethereum !== "undefined" || typeof window.web3 !== "undefined"
+    typeof window?.ethereum !== "undefined" || typeof window?.web3 !== "undefined"
   );
 }
 
@@ -31,7 +31,7 @@ export async function getWallet(): Promise<User | null> {
   if (!getIsWeb3()) return null;
 
   try {
-    const provider = new ethers.BrowserProvider(window.ethereum);
+    const provider = new ethers.BrowserProvider(window.ethereum!);
     await provider.send("eth_requestAccounts", []);
     const { address, network, signer } = await getWalletCredentials(provider);
     return {
@@ -39,6 +39,7 @@ export async function getWallet(): Promise<User | null> {
       network,
       provider,
       signer,
+      socket: undefined // Since it's optional, we can set it to undefined initially
     };
   } catch (error) {
     console.error("Error creating provider:", error);

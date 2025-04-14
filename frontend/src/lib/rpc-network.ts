@@ -63,7 +63,7 @@ export function isLocalNetwork(chainId: string): boolean {
 }
 
 export async function addNetwork(chain: NetworkChain): Promise<ApiResponse> {
-  if (typeof window.ethereum === "undefined") {
+  if (typeof window?.ethereum === "undefined") {
     return {
       success: false,
       message: "MetaMask or compatible wallet not found",
@@ -87,7 +87,8 @@ export async function addNetwork(chain: NetworkChain): Promise<ApiResponse> {
       Object.assign(params, { blockExplorerUrls: [chain.blockExplorer] });
     }
 
-    await window.ethereum.request({
+    
+    await window.ethereum!.request({
       method: "wallet_addEthereumChain",
       params: [params],
     });
@@ -124,7 +125,7 @@ export async function addNetwork(chain: NetworkChain): Promise<ApiResponse> {
 // Switch network function with improved error handling and automatic network addition
 export async function switchNetwork(chainId: string): Promise<ApiResponse> {
   console.log("hex chainId:", `0x${parseInt(chainId).toString(16)}`);
-  if (typeof window.ethereum === "undefined") {
+  if (typeof window?.ethereum === "undefined") {
     return {
       success: false,
       message: "MetaMask or compatible wallet not found",
@@ -133,7 +134,7 @@ export async function switchNetwork(chainId: string): Promise<ApiResponse> {
   }
 
   try {
-    await window.ethereum.request({
+    await window.ethereum!.request({
       method: "wallet_switchEthereumChain",
       params: [{ chainId: `0x${parseInt(chainId).toString(16)}` }],
     });

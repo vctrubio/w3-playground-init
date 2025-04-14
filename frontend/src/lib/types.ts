@@ -13,7 +13,7 @@ export type User = {
   network: Network;
   signer: ethers.JsonRpcSigner;
   provider: ethers.BrowserProvider;
-  socket: ethers.WebSocketProvider;
+  socket?: ethers.WebSocketProvider;
   //needed to add WebSocketProvider, init in UserContext and use it in eventlistener.
 };
 
@@ -22,6 +22,7 @@ export type Contract = {
   abi: ethers.InterfaceAbi;
   chainId?: number;
   instance?: ethers.Contract;
+  name?: string;
 };
 
 export type NotificationType = "error" | "warning" | "success" | "info";

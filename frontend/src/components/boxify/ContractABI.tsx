@@ -130,7 +130,7 @@ const FunctionSignature: React.FC<{
                           {output.name}
                         </span>
                       )}
-                      {outputIndex < functionSol.outputs.length - 1 && (
+                        {outputIndex < (functionSol.outputs?.length || 0) - 1 && (
                         <span className="text-gray-500 dark:text-gray-400">
                           ,{" "}
                         </span>
@@ -249,7 +249,7 @@ const ContractFunction: React.FC<{
             loading={funcState.loading}
             onInputChange={setContractState ? handleInputChange : undefined}
             onKeyDown={setContractState ? handleKeyDown : undefined}
-            userAddress={userAddress}
+            userAddress={userAddress || undefined}
           />
 
           {isFunction && setContractState && (
@@ -399,7 +399,7 @@ const ContractABI = ({
           ...funcState,
           loading: false,
           trigger: false,
-          response: `Error: ${e.message || "Unknown error occurred"}`,
+          response: `Error: ${(e as Error).message || "Unknown error occurred"}`,
         };
         return newState;
       });
@@ -415,7 +415,7 @@ const ContractABI = ({
           <span className="text-blue-700 dark:text-blue-400">contract</span>
           <span className="text-purple-700 dark:text-purple-400">
             {" "}
-            {name || contract.name || "Contract"}{" "}
+            {name || (contract && contract.name) || "Contract"}{" "}
           </span>
           <span className="text-gray-500 dark:text-gray-400">{"{"}</span>
         </div>

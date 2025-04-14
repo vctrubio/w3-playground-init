@@ -66,7 +66,7 @@ export const TokenEventsTable: React.FC<TokenEventsTableProps> = ({ tokenEvents,
             <tbody>
               {Object.entries(tokenEvents).flatMap(([tokenId, ownerships]) => {
                 const token = getTokenById(Number(tokenId));
-                return ownerships.map((ownership, index) => {
+                return ownerships.map((ownership: any, index: number) => {
                   const { minted, burned } = calculateMintBurn(rawEvents, Number(tokenId), ownership.address);
                   const isUser = isUserAddress(ownership.address);
                   
