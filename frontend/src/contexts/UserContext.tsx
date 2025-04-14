@@ -4,9 +4,8 @@ import { getWallet } from '@/lib/rpc-json';
 import { ethers } from 'ethers';
 import { contractGame } from './ContractGame';
 import { contractMain } from './ContractGame';
-// import { INFURA_PROJECT_ID } from '@/lib/rpc-network';
+import { INFURA_PROJECT_ID } from '@/lib/rpc-network';
 
-const INFURA_PROJECT_ID = "d8813f365adb4e3fa6365a111eed3589"
 interface UserContextType {
     user: User | null;
     isInitializing: boolean;

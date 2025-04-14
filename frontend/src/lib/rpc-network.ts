@@ -1,4 +1,4 @@
-export const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
+export const INFURA_PROJECT_ID = import.meta.env.VITE_INFURA_PROJECT_ID;
 import { ApiResponse } from "./types";
 export interface NetworkChain {
   id: string;
