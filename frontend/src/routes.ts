@@ -1,5 +1,4 @@
 import Home from './pages/Home';
-import Documentation from './pages/Dicumentation';
 
 export interface RouteConfig {
   path: string;
@@ -16,19 +15,11 @@ export const routes: RouteConfig[] = [
     path: '/',
     component: Home,
     label: 'Home',
-    icon: '🏠',
+    icon: '^',
     showInNav: true,
     description: 'Welcome page with key features and information'
   },
 
-  {
-    path: '/Documentation',
-    component: Documentation,
-    label: 'Documentation',
-    icon: '⚒️',
-    showInNav: true,
-    description: 'What i Did'
-  },
 ];
 
 // Helper function to get routes for navigation

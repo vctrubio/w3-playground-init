@@ -3,7 +3,7 @@ import { useUser } from '@/contexts/UserContext';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { executeContract } from '@/lib/rpc-contract';
 import { Token, TOKENS, RawEvent } from '@/lib/types';
-import { getTokenBalance, formatTokenBalance } from '@/lib/utils';
+import { getTokenBalance} from '@/lib/utils';
 
 const GameBox = ({
   item,

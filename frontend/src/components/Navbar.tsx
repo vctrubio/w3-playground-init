@@ -1,58 +1,19 @@
 import ThemeToggle from "./ThemeToggle";
 import { Link, useLocation } from "react-router-dom";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Logo from "./Logo";
 import { useUser } from "@/contexts/UserContext";
 
 const NavButton = () => {
   const { user } = useUser();
-  const [showDropdown, setShowDropdown] = useState(false);
 
-  const handleNetworkClick = (networkId: number) => {
-    console.log(`Selected network ID: ${networkId}`);
-    setShowDropdown(false);
-  };
-
-  const handleClick = () => {
-    if (user) {
-      setShowDropdown(!showDropdown);
-    } else {
-      // Navigate to documentation if no user
-      window.location.href = "/documentation";
-    }
-  };
+  if (!user) {
+    return <div className="py-2 px-4"></div>;
+  }
 
   return (
-    <div className="relative">
-      <button
-        onClick={handleClick}
-        className="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-full transition text-sm flex items-center"
-      >
-        {user ? (
-          <>
-            Chain: {user.network.id}
-          </>
-        ) : (
-          "Documentation"
-        )}
-      </button>
-
-      {showDropdown && user && (
-        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 py-1">
-          <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 border-b dark:border-gray-700">
-            Select Network
-          </div>
-          {[1, 2, 3].map((id) => (
-            <div
-              key={id}
-              className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
-              onClick={() => handleNetworkClick(id)}
-            >
-              Network {id}
-            </div>
-          ))}
-        </div>
-      )}
+    <div className="bg-purple-600 text-white py-2 px-4 rounded-full text-sm flex items-center">
+      Chain: {user.network.id}
     </div>
   );
 };

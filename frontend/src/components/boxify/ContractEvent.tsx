@@ -11,7 +11,6 @@ async function getLogs(filter: ethers.Filter, provider: ethers.Provider): Promis
   return raw;
 }
 
-// Function to initialize listeners for real-time events
 function initListener(contract: ethers.Contract, addEventCallback: (newEvent: RawEvent) => void, showNotification: any) {
 
   contract.on("Mint", (to: string, tokenId: number, amount: number, event: any) => {
